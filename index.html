@@ -6,148 +6,363 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: var(--tg-theme-bg-color, #0f172a);
-            --text: var(--tg-theme-text-color, #f8fafc);
-            --card: var(--tg-theme-secondary-bg-color, #1e293b);
-            --accent: var(--tg-theme-button-color, #3b82f6);
+            --bg: var(--tg-theme-bg-color, #090d16);
+            --text: var(--tg-theme-text-color, #f1f5f9);
+            --card: var(--tg-theme-secondary-bg-color, #131c31);
+            --accent: var(--tg-theme-button-color, #2563eb);
             --accent-text: var(--tg-theme-button-text-color, #ffffff);
-            --hint: var(--tg-theme-hint-color, #94a3b8);
+            --hint: var(--tg-theme-hint-color, #64748b);
+            --border: rgba(255, 255, 255, 0.08);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body { background: var(--bg); color: var(--text); padding-bottom: 80px; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
         
-        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+        .container { padding: 14px; max-width: 600px; margin: 0 auto; }
         
-        /* Навигация */
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        /* Верхний статус-бар */
+        .header-box {
+            background: var(--card); border-radius: 14px; padding: 14px;
+            margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid var(--border);
+        }
+        .user-info h2 { font-size: 15px; font-weight: 700; }
+        .user-info p { font-size: 11px; color: var(--hint); }
+        .stats-badge { background: rgba(37, 99, 235, 0.15); color: var(--accent); padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+
+        /* Поиск по функциям */
+        .search-input {
+            width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--card); color: var(--text); font-size: 13px; margin-bottom: 14px;
+            outline: none;
+        }
+
+        /* Навигация по категориям */
+        .categories { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 4px; }
+        .categories::-webkit-scrollbar { display: none; }
+        .cat-btn {
+            background: var(--card); border: 1px solid var(--border); color: var(--text);
+            padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;
+        }
+        .cat-btn.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
+
+        /* Карточки функций */
+        .tool-card {
+            background: var(--card); border-radius: 14px; padding: 14px;
+            margin-bottom: 10px; border: 1px solid var(--border); display: none;
+        }
+        .tool-card.active { display: block; }
+        .tool-card h3 { font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
         
+        input, select, textarea {
+            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 13px; margin-bottom: 8px; outline: none;
+        }
+        textarea { resize: vertical; min-height: 60px; }
+        
+        .btn {
+            background: var(--accent); color: var(--accent-text); border: none;
+            padding: 9px 12px; border-radius: 8px; font-weight: 600; width: 100%;
+            cursor: pointer; font-size: 13px; transition: opacity 0.2s;
+        }
+        .btn:active { opacity: 0.7; }
+        .btn-row { display: flex; gap: 6px; }
+        
+        .output {
+            background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px;
+            font-family: monospace; font-size: 12px; word-break: break-all; margin-top: 6px;
+            color: var(--accent); border: 1px solid var(--border);
+        }
+
+        /* Нижняя панель */
         .nav-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--card); display: flex; justify-content: space-around;
-            padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);
-            z-index: 100; backdrop-filter: blur(10px);
+            padding: 8px 0; border-top: 1px solid var(--border); z-index: 100;
+            backdrop-filter: blur(10px);
         }
         .nav-item {
             background: none; border: none; color: var(--hint);
-            font-size: 12px; cursor: pointer; text-align: center; flex: 1;
+            font-size: 10px; cursor: pointer; text-align: center; flex: 1;
         }
         .nav-item.active { color: var(--accent); font-weight: bold; }
-        .nav-item span { display: block; font-size: 20px; margin-bottom: 2px; }
-
-        /* Карточки и элементы */
-        .card {
-            background: var(--card); border-radius: 16px; padding: 16px;
-            margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .card h3 { font-size: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        
-        input, select {
-            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(150,150,150,0.2);
-            background: var(--bg); color: var(--text); font-size: 14px; margin-bottom: 10px;
-        }
-        
-        button.btn {
-            background: var(--accent); color: var(--accent-text); border: none;
-            padding: 12px 16px; border-radius: 10px; font-weight: 600; width: 100%;
-            cursor: pointer; font-size: 14px; transition: opacity 0.2s;
-        }
-        button.btn:active { opacity: 0.8; }
-        
-        .output-box {
-            background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;
-            font-family: monospace; font-size: 13px; word-break: break-all; margin-top: 8px;
-            color: var(--accent);
-        }
-
-        .header-profile { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .badge { background: rgba(59, 130, 246, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .nav-item span { display: block; font-size: 18px; margin-bottom: 1px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        
-        <!-- ВКЛАДКА 1: ИНСТРУМЕНТЫ -->
-        <div id="tab-tools" class="tab-content active">
-            <div class="header-profile">
-                <div>
-                    <h2 id="welcomeName">Загрузка...</h2>
-                    <p style="font-size: 12px; color: var(--hint);">Мультитул-ассистент</p>
+        <!-- Шапка -->
+        <div class="header-box">
+            <div class="user-info">
+                <h2 id="userName">Загрузка...</h2>
+                <p>30 встроенных модулей реального времени</p>
+            </div>
+            <div class="stats-badge">🔥 <span id="streakCount">1</span> дн</div>
+        </div>
+
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Найти функцию среди 30 утилит..." oninput="filterTools()">
+
+        <div class="categories">
+            <button class="cat-btn active" onclick="switchCat('all', this)">Все (30)</button>
+            <button class="cat-btn" onclick="switchCat('text', this)">Текст</button>
+            <button class="cat-btn" onclick="switchCat('gen', this)">Генераторы</button>
+            <button class="cat-btn" onclick="switchCat('calc', this)">Финансы</button>
+            <button class="cat-btn" onclick="switchCat('time', this)">Время</button>
+            <button class="cat-btn" onclick="switchCat('game', this)">Игры</button>
+        </div>
+
+        <div id="toolsContainer">
+
+            <!-- 1. Генератор паролей -->
+            <div class="tool-card" data-cat="gen" data-name="генератор паролей безопасно">
+                <h3>🔑 1. Генератор паролей</h3>
+                <input type="number" id="pLen" value="12" min="4" max="32">
+                <button class="btn" onclick="f1()">Создать пароль</button>
+                <div class="output" id="o1">Готово к работе</div>
+            </div>
+
+            <!-- 2. Base64 Кодировщик -->
+            <div class="tool-card" data-cat="text" data-name="base64 кодировать текст">
+                <h3>🔄 2. Кодер Base64</h3>
+                <input type="text" id="t1" placeholder="Текст...">
+                <div class="btn-row">
+                    <button class="btn" onclick="f2(1)">Закодировать</button>
+                    <button class="btn" onclick="f2(2)" style="background:var(--hint)">Декодировать</button>
                 </div>
-                <div class="badge">🔥 Стрик: <span id="streakBadge">1</span>д</div>
+                <div class="output" id="o2">Результат</div>
             </div>
 
-            <!-- Утилита 1: Генератор паролей -->
-            <div class="card">
-                <h3>🔑 Безопасный пароль</h3>
-                <input type="number" id="passLen" value="12" min="6" max="32" placeholder="Длина пароля">
-                <button class="btn" onclick="generatePassword()">Сгенерировать</button>
-                <div class="output-box" id="passOutput">Нажмите кнопку</div>
+            <!-- 3. Анализатор текста -->
+            <div class="tool-card" data-cat="text" data-name="анализатор текста символы слова">
+                <h3>📊 3. Анализ текста</h3>
+                <textarea id="t3" placeholder="Введите текст для анализа..." oninput="f3()"></textarea>
+                <div class="output" id="o3">Слов: 0 | Символов: 0 | Без пробелов: 0</div>
             </div>
 
-            <!-- Утилита 2: Кодировщик Base64 -->
-            <div class="card">
-                <h3>🔄 Текст в Base64 / Обратно</h3>
-                <input type="text" id="rawText" placeholder="Введите текст...">
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn" onclick="encodeB64()">Закодировать</button>
-                    <button class="btn" onclick="decodeB64()" style="background: #475569;">Декодировать</button>
+            <!-- 4. Регистр текста -->
+            <div class="tool-card" data-cat="text" data-name="регистр верхний нижний">
+                <h3>🔠 4. Смена регистра</h3>
+                <input type="text" id="t4" placeholder="Текст...">
+                <div class="btn-row">
+                    <button class="btn" onclick="f4(1)">ВЕРХНИЙ</button>
+                    <button class="btn" onclick="f4(2)">нижний</button>
                 </div>
-                <div class="output-box" id="b64Output">Результат появится здесь</div>
+                <div class="output" id="o4">Результат</div>
             </div>
 
-            <!-- Утилита 3: Калькулятор чаевых и сплита -->
-            <div class="card">
-                <h3>💰 Калькулятор счета на компанию</h3>
-                <input type="number" id="billSum" placeholder="Сумма счета (₽)" oninput="calcTip()">
-                <input type="number" id="peopleCount" placeholder="Количество человек" value="2" oninput="calcTip()">
-                <div class="output-box" id="tipOutput">Итог на человека: 0 ₽</div>
+            <!-- 5. Переворот текста -->
+            <div class="tool-card" data-cat="text" data-name="перевернуть текст реверс">
+                <h3>🔄 5. Реверс строки</h3>
+                <input type="text" id="t5" placeholder="Текст..." oninput="f5()">
+                <div class="output" id="o5">Результат</div>
             </div>
+
+            <!-- 6. Генератор Lorem Ipsum -->
+            <div class="tool-card" data-cat="gen" data-name="lorem ipsum рыбный текст">
+                <h3>📝 6. Генератор Lorem Ipsum</h3>
+                <button class="btn" onclick="f6()">Создать абзац текста</button>
+                <div class="output" id="o6">Рыбный текст</div>
+            </div>
+
+            <!-- 7. Очистка от дубликатов строк -->
+            <div class="tool-card" data-cat="text" data-name="очистка дубликатов строк">
+                <h3>🧹 7. Удаление строк-дубликатов</h3>
+                <textarea id="t7" placeholder="Строка 1\nСтрока 1\nСтрока 2" oninput="f7()"></textarea>
+                <div class="output" id="o7">Уникальные строки появятся здесь</div>
+            </div>
+
+            <!-- 8. Генератор случайных чисел -->
+            <div class="tool-card" data-cat="gen" data-name="случайные числа диапазон рандом">
+                <h3>🔢 8. Генератор чисел</h3>
+                <div class="btn-row">
+                    <input type="number" id="rMin" value="1" placeholder="От">
+                    <input type="number" id="rMax" value="100" placeholder="До">
+                </div>
+                <button class="btn" onclick="f8()">Случайное число</button>
+                <div class="output" id="o8">Число: -</div>
+            </div>
+
+            <!-- 9. Бросок кубика (Dice) -->
+            <div class="tool-card" data-cat="gen" data-name="кубик бросить кость d6">
+                <h3>🎲 9. Бросок кубика (1-6)</h3>
+                <button class="btn" onclick="f9()">Бросить кость</button>
+                <div class="output" id="o9">Выпало: -</div>
+            </div>
+
+            <!-- 10. Орёл и Решка -->
+            <div class="tool-card" data-cat="gen" data-name="монетка орел решка">
+                <h3>🪙 10. Монетка (Орёл / Решка)</h3>
+                <button class="btn" onclick="f10()">Подбросить</button>
+                <div class="output" id="o10">Результат: -</div>
+            </div>
+
+            <!-- 11. Генератор HEX цвета -->
+            <div class="tool-card" data-cat="gen" data-name="hex цвет палитра генератор">
+                <h3>🎨 11. Генератор случайного HEX-цвета</h3>
+                <button class="btn" onclick="f11()">Создать цвет</button>
+                <div class="output" id="o11" style="font-weight:bold;">#000000</div>
+            </div>
+
+            <!-- 12. Выбор случайного элемента (Спиннер решений) -->
+            <div class="tool-card" data-cat="gen" data-name="спиннер выбор случайного варианта">
+                <h3>🎯 12. Выбор варианта из списка</h3>
+                <input type="text" id="t12" value="Пицца, Суши, Бургер, Салат" placeholder="Через запятую">
+                <button class="btn" onclick="f12()">Выбрать случайное</button>
+                <div class="output" id="o12">Выбор: -</div>
+            </div>
+
+            <!-- 13. Генератор никнеймов -->
+            <div class="tool-card" data-cat="gen" data-name="никнейм генератор логин">
+                <h3>👤 13. Генератор никнейма</h3>
+                <button class="btn" onclick="f13()">Сгенерировать ник</button>
+                <div class="output" id="o13">-</div>
+            </div>
+
+            <!-- 14. Калькулятор чаевых -->
+            <div class="tool-card" data-cat="calc" data-name="калькулятор чаевых счет ресторан">
+                <h3>💰 14. Расчет счета и чаевых</h3>
+                <input type="number" id="cSum" placeholder="Сумма счета" oninput="f14()">
+                <input type="number" id="cPeop" value="2" placeholder="Человек" oninput="f14()">
+                <div class="output" id="o14">Итог на человека: 0</div>
+            </div>
+
+            <!-- 15. Калькулятор скидок -->
+            <div class="tool-card" data-cat="calc" data-name="калькулятор скидки акция цена">
+                <h3>🏷️ 15. Расчет скидки</h3>
+                <input type="number" id="dPrice" placeholder="Исходная цена" oninput="f15()">
+                <input type="number" id="dPercent" placeholder="Скидка %" oninput="f15()">
+                <div class="output" id="o15">Цена со скидкой: 0</div>
+            </div>
+
+            <!-- 16. Конвертер температур -->
+            <div class="tool-card" data-cat="calc" data-name="конвертер температур цельсий фаренгейт">
+                <h3>🌡️ 16. Цельсий ⇄ Фаренгейт</h3>
+                <input type="number" id="tVal" placeholder="Градусы Цельсия" oninput="f16()">
+                <div class="output" id="o16">В Фаренгейтах: 32°F</div>
+            </div>
+
+            <!-- 17. Конвертер байт / мегабайт -->
+            <div class="tool-card" data-cat="calc" data-name="конвертер байты килобайты мегабайты гигабайты">
+                <h3>💾 17. Конвертер памяти (MB в GB/KB)</h3>
+                <input type="number" id="bVal" placeholder="Мегабайты (MB)" oninput="f17()">
+                <div class="output" id="o17">KB / GB</div>
+            </div>
+
+            <!-- 18. Калькулятор индекса массы тела (ИМТ) -->
+            <div class="tool-card" data-cat="calc" data-name="имт индекс массы тела здоровье калькулятор">
+                <h3>⚖️ 18. Калькулятор ИМТ (BMI)</h3>
+                <input type="number" id="bmiW" placeholder="Вес (кг)" oninput="f18()">
+                <input type="number" id="bmiH" placeholder="Рост (см)" oninput="f18()">
+                <div class="output" id="o18">ИМТ: -</div>
+            </div>
+
+            <!-- 19. Калькулятор сложного процента -->
+            <div class="tool-card" data-cat="calc" data-name="сложный процент инвестиции капитал">
+                <h3>📈 19. Сложный процент (Инвестиции)</h3>
+                <input type="number" id="invSum" value="10000" placeholder="Сумма" oninput="f19()">
+                <input type="number" id="invPer" value="10" placeholder="% годовых" oninput="f19()">
+                <input type="number" id="invYear" value="5" placeholder="Лет" oninput="f19()">
+                <div class="output" id="o19">Итоговый капитал: 0</div>
+            </div>
+
+            <!-- 20. Секундомер -->
+            <div class="tool-card" data-cat="time" data-name="секундомер время замер">
+                <h3>⏱️ 20. Секундомер реального времени</h3>
+                <div class="output" id="o20" style="font-size:16px; text-align:center;">00:00:00</div>
+                <div class="btn-row" style="margin-top:6px;">
+                    <button class="btn" onclick="f20_start()">Старт</button>
+                    <button class="btn" onclick="f20_stop()" style="background:var(--hint)">Стоп</button>
+                    <button class="btn" onclick="f20_reset()" style="background:#ef4444">Сброс</button>
+                </div>
+            </div>
+
+            <!-- 21. Обратный отсчет до Нового года -->
+            <div class="tool-card" data-cat="time" data-name="таймер обратный отсчет новый год">
+                <h3>⏳ 21. До Нового года</h3>
+                <button class="btn" onclick="f21()">Обновить таймер</button>
+                <div class="output" id="o21">Нажмите кнопку</div>
+            </div>
+
+            <!-- 22. Мировое время / Часовые пояса -->
+            <div class="tool-card" data-cat="time" data-name="мировое время часы пояса">
+                <h3>🌍 22. Часы по UTC / Москве / Нью-Йорку</h3>
+                <button class="btn" onclick="f22()">Показать время</button>
+                <div class="output" id="o22">Нажмите обновить</div>
+            </div>
+
+            <!-- 23. Календарь текущего дня -->
+            <div class="tool-card" data-cat="time" data-name="календарь день недели дата">
+                <h3>📅 23. Текущая дата и день года</h3>
+                <button class="btn" onclick="f23()">Узнать день</button>
+                <div class="output" id="o23">-</div>
+            </div>
+
+            <!-- 24. Локальный блокнот заметок -->
+            <div class="tool-card" data-cat="game" data-name="блокнот заметки сохранить локально">
+                <h3>📒 24. Быстрый блокнот (в памяти)</h3>
+                <textarea id="t24" placeholder="Пишите здесь, текст сохранится автоматически..." oninput="f24()"></textarea>
+                <div class="output" id="o24">Автосохранение включено</div>
+            </div>
+
+            <!-- 25. Список задач (To-Do) -->
+            <div class="tool-card" data-cat="game" data-name="список задач тоду лист чекбокс">
+                <h3>☑️ 25. Чек-лист задач</h3>
+                <div class="btn-row">
+                    <input type="text" id="t25Input" placeholder="Новая задача..." style="margin-bottom:0;">
+                    <button class="btn" onclick="f25_add()" style="width: 80px;">Добавить</button>
+                </div>
+                <div id="o25" style="margin-top:8px; font-size:13px;"></div>
+            </div>
+
+            <!-- 26. Трекер привычек (Стрики) -->
+            <div class="tool-card" data-cat="game" data-name="трекер привычек бонус стрик">
+                <h3>🔥 26. Ежедневный бонус и стрик</h3>
+                <p style="font-size:12px; color:var(--hint); margin-bottom:6px;">Забирайте бонус раз в день для роста серии.</p>
+                <button class="btn" onclick="f26()">Забрать бонус (+50 очков)</button>
+                <div class="output" id="o26">Серия входов активна</div>
+            </div>
+
+            <!-- 27. Мини-игра: Кликер (Tap-to-Earn) -->
+            <div class="tool-card" data-cat="game" data-name="кликер игра тапалка монеты">
+                <h3>🪙 27. Мини-Кликер (Тапалка)</h3>
+                <div style="text-align:center; font-size:22px; font-weight:bold; margin:6px 0;" id="clickScore">0</div>
+                <button class="btn" onclick="f27()" style="background:#eab308; color:#000;">ТАПАТЬ! 🚀</button>
+            </div>
+
+            <!-- 28. Мини-игра: Угадай число -->
+            <div class="tool-card" data-cat="game" data-name="игра угадай число бот">
+                <h3>🎮 28. Игра: Угадай число (1-10)</h3>
+                <input type="number" id="guessIn" placeholder="Ваше число от 1 до 10">
+                <button class="btn" onclick="f28()">Проверить</button>
+                <div class="output" id="o28">Бот загадал число от 1 до 10</div>
+            </div>
+
+            <!-- 29. Калькулятор калорий (Формула Миффлина-Сан Жеора) -->
+            <div class="tool-card" data-cat="calc" data-name="калории калькулятор нормы кбжу">
+                <h3>🥗 29. Базовый расчет калорий</h3>
+                <input type="number" id="calW" placeholder="Вес (кг)" oninput="f29()">
+                <input type="number" id="calH" placeholder="Рост (см)" oninput="f29()">
+                <input type="number" id="calA" placeholder="Возраст" oninput="f29()">
+                <div class="output" id="o29">Норма калорий: 0 ккал</div>
+            </div>
+
+            <!-- 30. Конвертер величин (Метры в футы) -->
+            <div class="tool-card" data-cat="calc" data-name="конвертер длины метры футы">
+                <h3>📏 30. Метры ⇄ Футы</h3>
+                <input type="number" id="mVal" placeholder="Метры" oninput="f30()">
+                <div class="output" id="o30">Футов: 0</div>
+            </div>
+
         </div>
-
-        <!-- ВКЛАДКА 2: СТРИКИ И НАГРАДЫ -->
-        <div id="tab-rewards" class="tab-content">
-            <h2>Ежедневные бонусы</h2>
-            <p style="font-size: 13px; color: var(--hint); margin-bottom: 15px;">Заходите каждый день, чтобы растить рейтинг.</p>
-            
-            <div class="card" style="text-align: center; padding: 24px;">
-                <div style="font-size: 40px; margin-bottom: 10px;">🎁</div>
-                <h3>Ежедневный сундук</h3>
-                <p style="font-size: 13px; color: var(--hint); margin-bottom: 16px;">Доступно для открытия сегодня</p>
-                <button class="btn" onclick="claimDaily()">Забрать награду (+50 очков)</button>
-            </div>
-
-            <div class="card">
-                <h3>🏆 Ваши достижения</h3>
-                <p style="font-size: 13px; color: var(--hint); margin-top: 5px;">• Новичок утилит (Выполнено)</p>
-                <p style="font-size: 13px; color: var(--hint); margin-top: 5px;">• Стрик 7 дней (Не выполнено)</p>
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА 3: ПРОФИЛЬ -->
-        <div id="tab-profile" class="tab-content">
-            <h2>Личный кабинет</h2>
-            <div class="card" style="margin-top: 15px;">
-                <p><strong>Имя:</strong> <span id="profileName">-</span></p>
-                <p style="margin-top: 8px;"><strong>ID пользователя:</strong> <span id="profileId">-</span></p>
-                <p style="margin-top: 8px;"><strong>Баланс очков:</strong> <span id="profilePoints">100</span> монеток</p>
-            </div>
-            
-            <div class="card">
-                <h3>💎 Премиум-доступ (Монетизация)</h3>
-                <p style="font-size: 13px; color: var(--hint); margin-bottom: 12px;">Откройте продвинутые инструменты без ограничений через Telegram Stars.</p>
-                <button class="btn" style="background: #f59e0b; color: #000;" onclick="alert('Интеграция с Telegram Stars подключается через BotFather и бэкенд выставителем счета invoice')">Купить за ⭐ Stars</button>
-            </div>
-        </div>
-
     </div>
 
-<div class="nav-bar">
-    <button class="nav-item active" onclick="switchTab('tools', this)"><span>🛠️</span>Инструменты</button>
-    <button class="nav-item" onclick="switchTab('rewards', this)"><span>🔥</span>Бонусы</button>
-    <button class="nav-item" onclick="switchTab('profile', this)"><span>👤</span>Профиль</button>
-</div>
+    <!-- Навигация снизу -->
+    <div class="nav-bar">
+        <button class="nav-item active" onclick="switchTab('all', this)"><span>🛠️</span>Все</button>
+        <button class="nav-item" onclick="switchTab('gen', this)"><span>⚙️</span>Генераторы</button>
+        <button class="nav-item" onclick="switchTab('calc', this)"><span>📊</span>Финансы</button>
+        <button class="nav-item" onclick="switchTab('game', this)"><span>🎮</span>Игры</button>
+    </div>
 
 <script>
     const tg = window.Telegram.WebApp;
@@ -155,77 +370,286 @@
 
     // Инициализация пользователя
     const user = tg.initDataUnsafe?.user;
-    if (user) {
-        document.getElementById('welcomeName').innerText = `Привет, ${user.first_name}! 🚀`;
-        document.getElementById('profileName').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-        document.getElementById('profileId').innerText = user.id;
-    } else {
-        document.getElementById('welcomeName').innerText = "Привет, Гость! 🚀";
-        document.getElementById('profileName').innerText = "Веб-версия";
-        document.getElementById('profileId').innerText = "12345678";
+    document.getElementById('userName').innerText = user ? `Привет, ${user.first_name}! 🚀` : "Привет, Гость! 🚀";
+
+    // Инициализация отображения всех карточек
+    document.querySelectorAll('.tool-card').forEach(el => el.classList.add('active'));
+
+    // Фильтрация и поиск
+    function filterTools() {
+        let q = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.tool-card').forEach(card => {
+            let name = card.getAttribute('data-name');
+            if (name.includes(q)) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
     }
 
-    // Управление вкладками
-    function switchTab(tabId, element) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active');
-        element.classList.add('active');
+    function switchCat(cat, btn) {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('searchInput').value = '';
+        document.querySelectorAll('.tool-card').forEach(card => {
+            if (cat === 'all' || card.getAttribute('data-cat') === cat) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
     }
 
-    // Утилита 1: Генератор паролей
-    function generatePassword() {
-        let len = parseInt(document.getElementById('passLen').value) || 12;
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-        let pass = Array.from({length: len}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-        document.getElementById('passOutput').innerText = pass;
-    }
-
-    // Утилита 2: Base64
-    function encodeB64() {
-        let val = document.getElementById('rawText').value;
-        try { document.getElementById('b64Output').innerText = btoa(encodeURIComponent(val)); } 
-        catch(e) { document.getElementById('b64Output').innerText = "Ошибка кодирования"; }
-    }
-    function decodeB64() {
-        let val = document.getElementById('rawText').value;
-        try { document.getElementById('b64Output').innerText = decodeURIComponent(atob(val)); } 
-        catch(e) { document.getElementById('b64Output').innerText = "Неверный формат Base64"; }
-    }
-
-    // Утилита 3: Чаевые
-    function calcTip() {
-        let sum = parseFloat(document.getElementById('billSum').value) || 0;
-        let people = parseInt(document.getElementById('peopleCount').value) || 1;
-        let totalWithTip = sum * 1.1; // Автоматически 10% чаевых
-        let perPerson = people > 0 ? (totalWithTip / people).toFixed(2) : 0;
-        document.getElementById('tipOutput').innerText = `Итог с учетом 10% чаевых: ${totalWithTip.toFixed(2)} ₽\nНа каждого (${people} чел.): ${perPerson} ₽`;
-    }
-
-    // Система стриков и наград (localStorage)
-    let streak = localStorage.getItem('app_streak') ? parseInt(localStorage.getItem('app_streak')) : 1;
-    let points = localStorage.getItem('app_points') ? parseInt(localStorage.getItem('app_points')) : 100;
-    
-    document.getElementById('streakBadge').innerText = streak;
-    document.getElementById('profilePoints').innerText = points;
-
-    function claimDaily() {
-        let lastClaim = localStorage.getItem('last_claim');
-        let today = new Date().toDateString();
-        if (lastClaim === today) {
-            alert('Вы уже забирали бонус сегодня! Возвращайтесь завтра.');
-            return;
+    function switchTab(cat, btn) {
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if(cat === 'all') {
+            document.querySelectorAll('.tool-card').forEach(c => c.classList.add('active'));
+        } else {
+            document.querySelectorAll('.tool-card').forEach(c => {
+                if(c.getAttribute('data-cat') === cat) c.classList.add('active');
+                else c.classList.remove('active');
+            });
         }
-        streak += 1;
-        points += 50;
-        localStorage.setItem('app_streak', streak);
-        localStorage.setItem('app_points', points);
-        localStorage.setItem('last_claim', today);
-        
-        document.getElementById('streakBadge').innerText = streak;
-        document.getElementById('profilePoints').innerText = points;
-        alert('Успешно! Получено +50 очков.');
+    }
+
+    // --- ЛОГИКА 30 ФУНКЦИЙ ---
+    // 1. Пароли
+    function f1() {
+        let len = parseInt(document.getElementById('pLen').value) || 12;
+        let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        let res = Array.from({length: len}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        document.getElementById('o1').innerText = res;
+    }
+    // 2. Base64
+    function f2(type) {
+        let val = document.getElementById('t1').value;
+        try {
+            if(type === 1) document.getElementById('o2').innerText = btoa(encodeURIComponent(val));
+            else document.getElementById('o2').innerText = decodeURIComponent(atob(val));
+        } catch(e) { document.getElementById('o2').innerText = "Ошибка преобразования"; }
+    }
+    // 3. Анализ текста
+    function f3() {
+        let t = document.getElementById('t3').value;
+        let words = t.trim() ? t.trim().split(/\s+/).length : 0;
+        let chars = t.length;
+        let noSpaces = t.replace(/\s/g, '').length;
+        document.getElementById('o3').innerText = `Слов: ${words} | Символов: ${chars} | Без пробелов: ${noSpaces}`;
+    }
+    // 4. Регистр
+    function f4(type) {
+        let t = document.getElementById('t4').value;
+        document.getElementById('o4').innerText = type === 1 ? t.toUpperCase() : t.toLowerCase();
+    }
+    // 5. Реверс
+    function f5() {
+        let t = document.getElementById('t5').value;
+        document.getElementById('o5').innerText = t.split('').reverse().join('');
+    }
+    // 6. Lorem Ipsum
+    function f6() {
+        let text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.";
+        document.getElementById('o6').innerText = text;
+    }
+    // 7. Дубликаты строк
+    function f7() {
+        let t = document.getElementById('t7').value;
+        let lines = t.split('\n');
+        let unique = [...new Set(lines)].join('\n');
+        document.getElementById('o7').innerText = unique;
+    }
+    // 8. Рандом число
+    function f8() {
+        let min = parseInt(document.getElementById('rMin').value) || 0;
+        let max = parseInt(document.getElementById('rMax').value) || 100;
+        let res = Math.floor(Math.random() * (max - min + 1)) + min;
+        document.getElementById('o8').innerText = "Число: " + res;
+    }
+    // 9. Кубик
+    function f9() {
+        let res = Math.floor(Math.random() * 6) + 1;
+        document.getElementById('o9').innerText = "Выпало: " + res;
+    }
+    // 10. Монетка
+    function f10() {
+        let res = Math.random() < 0.5 ? "Орёл 🦅" : "Решка 🪙";
+        document.getElementById('o10').innerText = "Результат: " + res;
+    }
+    // 11. HEX Цвет
+    function f11() {
+        let color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        let el = document.getElementById('o11');
+        el.innerText = color;
+        el.style.color = color;
+    }
+    // 12. Спиннер
+    function f12() {
+        let arr = document.getElementById('t12').value.split(',').map(s => s.trim()).filter(Boolean);
+        if(arr.length === 0) { document.getElementById('o12').innerText = "Введите варианты"; return; }
+        let pick = arr[Math.floor(Math.random() * arr.length)];
+        document.getElementById('o12').innerText = "Выбор: " + pick;
+    }
+    // 13. Никнейм
+    function f13() {
+        let p1 = ["Cyber", "Neon", "Shadow", "Mega", "Super", "Alpha", "Dark", "Turbo"];
+        let p2 = ["Ninja", "Hacker", "Gamer", "Fox", "Wolf", "Ghost", "Titan", "Bot"];
+        let nick = p1[Math.floor(Math.random()*p1.length)] + p2[Math.floor(Math.random()*p2.length)] + Math.floor(Math.random()*99);
+        document.getElementById('o13').innerText = nick;
+    }
+    // 14. Чаевые
+    function f14() {
+        let sum = parseFloat(document.getElementById('cSum').value) || 0;
+        let peop = parseInt(document.getElementById('cPeop').value) || 1;
+        let total = sum * 1.1;
+        let per = peop > 0 ? (total / peop).toFixed(2) : 0;
+        document.getElementById('o14').innerText = `Всего с 10% чаевых: ${total.toFixed(2)} | На человека: ${per}`;
+    }
+    // 15. Скидка
+    function f15() {
+        let p = parseFloat(document.getElementById('dPrice').value) || 0;
+        let d = parseFloat(document.getElementById('dPercent').value) || 0;
+        let res = p - (p * d / 100);
+        document.getElementById('o15').innerText = "Цена со скидкой: " + res.toFixed(2);
+    }
+    // 16. Температура
+    function f16() {
+        let c = parseFloat(document.getElementById('tVal').value) || 0;
+        let f = (c * 9/5) + 32;
+        document.getElementById('o16').innerText = `В Фаренгейтах: ${f.toFixed(1)}°F | В Кельвинах: ${(c + 273.15).toFixed(1)}K`;
+    }
+    // 17. Память
+    function f17() {
+        let mb = parseFloat(document.getElementById('bVal').value) || 0;
+        document.getElementById('o17').innerText = `${mb * 1024} KB | ${(mb / 1024).toFixed(3)} GB`;
+    }
+    // 18. ИМТ
+    function f18() {
+        let w = parseFloat(document.getElementById('bmiW').value) || 0;
+        let h = (parseFloat(document.getElementById('bmiH').value) || 0) / 100;
+        if(h <= 0) return;
+        let bmi = (w / (h * h)).toFixed(1);
+        let status = bmi < 18.5 ? "Дефицит" : bmi < 25 ? "Норма" : "Избыток";
+        document.getElementById('o18').innerText = `ИМТ: ${bmi} (${status})`;
+    }
+    // 19. Сложный процент
+    function f19() {
+        let s = parseFloat(document.getElementById('invSum').value) || 0;
+        let p = parseFloat(document.getElementById('invPer').value) || 0;
+        let y = parseFloat(document.getElementById('invYear').value) || 0;
+        let res = s * Math.pow((1 + p / 100), y);
+        document.getElementById('o19').innerText = "Итоговый капитал: " + res.toFixed(2);
+    }
+    // 20. Секундомер
+    let timerId = null, secTime = 0;
+    function f20_start() {
+        if(timerId) return;
+        timerId = setInterval(() => {
+            secTime++;
+            let m = String(Math.floor(secTime / 60)).padStart(2, '0');
+            let s = String(secTime % 60).padStart(2, '0');
+            document.getElementById('o20').innerText = `00:${m}:${s}`;
+        }, 1000);
+    }
+    function f20_stop() { clearInterval(timerId); timerId = null; }
+    function f20_reset() { f20_stop(); secTime = 0; document.getElementById('o20').innerText = "00:00:00"; }
+    
+    // 21. До Нового года
+    function f21() {
+        let now = new Date();
+        let ny = new Date(now.getFullYear() + 1, 0, 1);
+        let diff = ny - now;
+        let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        document.getElementById('o21').innerText = `До Нового года осталось дней: ${days}`;
+    }
+    // 22. Время
+    function f22() {
+        let d = new Date();
+        document.getElementById('o22').innerText = `UTC: ${d.toUTCString().slice(17,25)} | Местное: ${d.toLocaleTimeString()}`;
+    }
+    // 23. Дата
+    function f23() {
+        let d = new Date();
+        document.getElementById('o23').innerText = d.toLocaleDateString('ru-RU', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
+    }
+    // 24. Блокнот
+    document.getElementById('t24').value = localStorage.getItem('note_val') || '';
+    function f24() {
+        localStorage.setItem('note_val', document.getElementById('t24').value);
+        document.getElementById('o24').innerText = "Сохранено в памяти устройства ✓";
+    }
+    // 25. To-Do список
+    let tasks = JSON.parse(localStorage.getItem('tasks_list') || '[]');
+    renderTasks();
+    function f25_add() {
+        let val = document.getElementById('t25Input').value.trim();
+        if(!val) return;
+        tasks.push({text: val, done: false});
+        document.getElementById('t25Input').value = '';
+        saveAndRenderTasks();
+    }
+    function toggleTask(i) { tasks[i].done = !tasks[i].done; saveAndRenderTasks(); }
+    function deleteTask(i) { tasks.splice(i, 1); saveAndRenderTasks(); }
+    function saveAndRenderTasks() {
+        localStorage.setItem('tasks_list', JSON.stringify(tasks));
+        renderTasks();
+    }
+    function renderTasks() {
+        let html = '';
+        tasks.forEach((t, i) => {
+            html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span onclick="toggleTask(${i})" style="cursor:pointer; text-decoration:${t.done ? 'line-through':'none'}; color:${t.done ? 'var(--hint)':'var(--text)'};">${t.text}</span>
+                <button onclick="deleteTask(${i})" style="background:none; border:none; color:#ef4444; cursor:pointer;">✕</button>
+            </div>`;
+        });
+        document.getElementById('o25').innerHTML = html || 'Список задач пуст';
+    }
+    // 26. Стрик
+    let streak = parseInt(localStorage.getItem('my_streak') || '1');
+    document.getElementById('streakCount').innerText = streak;
+    function f26() {
+        let last = localStorage.getItem('last_bonus_date');
+        let today = new Date().toDateString();
+        if(last === today) { alert('Бонус уже получен сегодня!'); return; }
+        streak++;
+        localStorage.setItem('my_streak', streak);
+        localStorage.setItem('last_bonus_date', today);
+        document.getElementById('streakCount').innerText = streak;
+        document.getElementById('o26').innerText = "Успешно! +50 очков зачислено.";
+    }
+    // 27. Кликер
+    let clicks = parseInt(localStorage.getItem('click_score') || '0');
+    document.getElementById('clickScore').innerText = clicks;
+    function f27() {
+        clicks++;
+        localStorage.setItem('click_score', clicks);
+        document.getElementById('clickScore').innerText = clicks;
+    }
+    // 28. Угадай число
+    let targetNum = Math.floor(Math.random() * 10) + 1;
+    function f28() {
+        let val = parseInt(document.getElementById('guessIn').value);
+        let msg = val === targetNum ? "🎉 Угадали! Загадано новое." : (val < targetNum ? "📈 Загаданное больше" : "📉 Загаданное меньше");
+        if(val === targetNum) targetNum = Math.floor(Math.random() * 10) + 1;
+        document.getElementById('o28').innerText = msg;
+    }
+    // 29. Калории
+    function f29() {
+        let w = parseFloat(document.getElementById('calW').value) || 0;
+        let h = parseFloat(document.getElementById('calH').value) || 0;
+        let a = parseFloat(document.getElementById('calA').value) || 0;
+        let c = (10 * w) + (6.25 * h) - (5 * a) + 5;
+        document.getElementById('o29').innerText = `Базовый метаболизм: ${c > 5 ? c.toFixed(0) : 0} ккал/день`;
+    }
+    // 30. Конвертер длин
+    function f30() {
+        let m = parseFloat(document.getElementById('mVal').value) || 0;
+        let ft = m * 3.28084;
+        let cm = m * 100;
+        document.getElementById('o30').innerText = `Футов: ${ft.toFixed(2)} | Сантиметров: ${cm.toFixed(0)}`;
     }
 </script>
 </body>
 </html>
+
