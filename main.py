@@ -1,5 +1,3 @@
-
-Исправленный чистый код с правильными переносами строк и отступами для файла main.py:
 import asyncio
 import logging
 import sqlite3
@@ -17,7 +15,6 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN_HERE")
 DB_NAME = "guildverse.db"
 
 
-# --- БАЗА ДАННЫХ ---
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -69,7 +66,6 @@ def db_execute(query, params=(), fetchone=False, fetchall=False, commit=False):
     return res
 
 
-# --- СОСТОЯНИЯ FSM ---
 class QuestStates(StatesGroup):
     title = State()
     reward = State()
@@ -82,7 +78,6 @@ class GuildStates(StatesGroup):
 dp = Dispatcher(storage=MemoryStorage())
 
 
-# --- КЛАВИАТУРЫ ---
 def main_keyboard():
     kb = InlineKeyboardBuilder()
     kb.button(text="👤 Профиль & Кошелек", callback_data="profile")
@@ -95,7 +90,6 @@ def main_keyboard():
     return kb.as_markup()
 
 
-# --- ХЭНДЛЕРЫ ---
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message, command: CommandObject):
     user_id = message.from_user.id
@@ -366,4 +360,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
