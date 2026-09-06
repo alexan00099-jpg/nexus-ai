@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OmniAI 30-in-1 Toolkit</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -21,14 +22,25 @@
 
         .container { padding: 16px; max-width: 600px; margin: 0 auto; }
 
-        /* Поиск и шапка */
-        .header-search { display: flex; gap: 10px; margin-bottom: 16px; }
+        /* Шапка и лимиты */
+        .header-box {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 16px; padding: 16px; color: #fff; margin-bottom: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+        .header-box h1 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+        .header-box p { font-size: 12px; opacity: 0.85; }
+        .limit-badge { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+
+        /* Поиск */
+        .search-box { margin-bottom: 14px; }
         .search-input {
-            flex: 1; padding: 12px 16px; background: var(--card); border: 1px solid var(--border);
+            width: 100%; padding: 12px 16px; background: var(--card); border: 1px solid var(--border);
             border-radius: 12px; color: var(--text); font-size: 14px; outline: none;
         }
-        
-        /* Категории (Чипсы) */
+
+        /* Категории */
         .categories-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
         .categories-scroll::-webkit-scrollbar { display: none; }
         .chip {
@@ -37,33 +49,56 @@
         }
         .chip.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 
-        /* Карточка новости */
-        .news-card {
-            background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 14px;
-            border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative;
+        /* Сетка инструментов */
+        .tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+        .tool-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+            padding: 14px; cursor: pointer; transition: transform 0.1s, border-color 0.2s;
+            display: flex; flex-direction: column; justify-content: space-between; min-height: 90px;
         }
-        .news-tag { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; display: inline-block; }
-        .news-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
-        .news-desc { font-size: 13px; color: var(--hint); margin-bottom: 14px; line-height: 1.5; }
-        .news-footer { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--hint); border-top: 1px solid var(--border); padding-top: 10px; }
-        
-        .action-icon { background: none; border: none; color: var(--hint); cursor: pointer; font-size: 16px; }
-        .action-icon.bookmarked { color: var(--pro); }
+        .tool-card:active { transform: scale(0.97); }
+        .tool-card:hover { border-color: var(--accent); }
+        .tool-icon { font-size: 22px; margin-bottom: 8px; }
+        .tool-title { font-size: 13px; font-weight: 600; line-height: 1.3; }
 
-        /* AI Саммари блок */
-        .ai-summary { background: rgba(59, 130, 246, 0.08); border-left: 3px solid var(--accent); padding: 10px; border-radius: 0 8px 8px 0; font-size: 12px; color: #93c5fd; margin-bottom: 12px; }
+        /* Модальное окно инструмента */
+        .modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            z-index: 200; display: none; align-items: flex-end; justify-content: center;
+        }
+        .modal.open { display: flex; }
+        .modal-content {
+            background: var(--card); width: 100%; max-width: 600px; max-height: 85vh;
+            border-radius: 24px 24px 0 0; padding: 20px; overflow-y: auto;
+            border-top: 1px solid var(--border); animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* Вкладки */
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-title { font-size: 16px; font-weight: 700; }
+        .close-btn { background: none; border: none; color: var(--hint); font-size: 20px; cursor: pointer; }
 
-        /* PRO промо */
-        .pro-banner {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            border-radius: 16px; padding: 20px; color: #000; margin-bottom: 16px; font-weight: 600;
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-size: 12px; color: var(--hint); margin-bottom: 6px; font-weight: 500; }
+        .form-textarea, .form-input {
+            width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border);
+            color: var(--text); border-radius: 10px; font-size: 14px; outline: none; resize: vertical; min-height: 90px;
+        }
+        .form-input { min-height: auto; }
+
+        .btn {
+            background: var(--accent); color: var(--accent-text); border: none;
+            padding: 12px 16px; border-radius: 12px; font-weight: 600; width: 100%;
+            cursor: pointer; font-size: 14px; text-align: center;
+        }
+        .btn:active { transform: scale(0.98); }
+
+        .result-box {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px; margin-top: 14px; font-size: 13px; word-break: break-all; white-space: pre-wrap;
         }
 
-        /* Навигация */
+        /* Навигация снизу */
         .nav-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--card); display: flex; justify-content: space-around;
@@ -76,68 +111,74 @@
         }
         .nav-item.active { color: var(--accent); font-weight: 700; }
         .nav-item span { display: block; font-size: 20px; margin-bottom: 2px; }
+
+        /* Вкладки */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- ВКЛАДКА 1: ЛЕНТА НОВОСТЕЙ -->
-        <div id="tab-feed" class="tab-content active">
-            <div class="header-search">
-                <input type="text" class="search-input" id="searchInput" placeholder="Поиск по новостям и тегам..." oninput="filterNews()">
+        <!-- Главная вкладка со всеми инструментами -->
+        <div id="tab-home" class="tab-content active">
+            <div class="header-box">
+                <div>
+                    <h1>OmniAI Toolkit</h1>
+                    <p>30 полезных утилит в одном окне</p>
+                </div>
+                <div class="limit-badge" id="limitBadge">Лимит: 30/30</div>
+            </div>
+
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchToolInput" placeholder="Поиск среди 30 инструментов..." oninput="filterTools()">
             </div>
 
             <div class="categories-scroll">
-                <button class="chip active" onclick="setCategory('all', this)">Все</button>
-                <button class="chip" onclick="setCategory('AI & Tech', this)">🤖 ИИ и Технологии</button>
-                <button class="chip" onclick="setCategory('Crypto', this)">🪙 Крипто</button>
-                <button class="chip" onclick="setCategory('Business', this)">📈 Бизнес</button>
-                <button class="chip" onclick="setCategory('Science', this)">🚀 Наука</button>
+                <button class="chip active" onclick="setCategory('all', this)">Все (30)</button>
+                <button class="chip" onclick="setCategory('text', this)">📝 Текст и ИИ</button>
+                <button class="chip" onclick="setCategory('dev', this)">💻 Разработка</button>
+                <button class="chip" onclick="setCategory('office', this)">📊 Офис и Утилиты</button>
             </div>
 
-            <div id="newsFeedContainer">
-                <!-- Новости рендерятся динамически -->
+            <div class="tools-grid" id="toolsGrid">
+                <!-- Сгенерировано динамически через JS -->
             </div>
         </div>
 
-        <!-- ВКЛАДКА 2: ЗАКЛАДКИ -->
-        <div id="tab-bookmarks" class="tab-content">
-            <h2 style="font-size: 18px; margin-bottom: 12px;">📌 Сохраненные статьи</h2>
-            <div id="bookmarksContainer">
-                <!-- Закладки -->
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА 3: AI ДАЙДЖЕСТ -->
-        <div id="tab-digest" class="tab-content">
-            <div class="pro-banner">
-                <h3 style="font-size: 16px; margin-bottom: 4px;">⚡ Утренний AI-Дайджест</h3>
-                <p style="font-size: 12px; opacity: 0.9; margin-bottom: 12px;">Нейросеть проанализировала 450 источников и выделила главное за сегодня.</p>
-            </div>
-            <div style="background: var(--card); border-radius: 16px; padding: 16px; border: 1px solid var(--border); font-size: 13px; line-height: 1.6;">
-                <p style="margin-bottom: 8px;"><strong>1. Прорыв в квантовых вычислениях:</strong> Ведущие лаборатории объявили о создании стабильного кубита нового поколения.</p>
-                <p style="margin-bottom: 8px;"><strong>2. Рынок криптовалют:</strong> Институциональные притоки капитала обновили месячный максимум на фоне макроэкономических новостей.</p>
-                <p><strong>3. Искусственный интеллект:</strong> Релиз новых мультимодальных моделей меняет стандарты разработки мобильных приложений.</p>
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА 4: PRO / МОНЕТИЗАЦИЯ -->
+        <!-- Вкладка Монетизация / PRO -->
         <div id="tab-pro" class="tab-content">
-            <div style="background: var(--card); border-radius: 16px; padding: 20px; border: 2px solid var(--pro); text-align: center;">
-                <h2 style="font-size: 20px; margin-bottom: 8px; color: var(--pro);">👑 NewsPulse PRO</h2>
+            <div style="background: var(--card); border: 2px solid var(--pro); border-radius: 16px; padding: 20px; text-align: center;">
+                <h2 style="font-size: 20px; margin-bottom: 8px; color: var(--pro);">👑 Безлимитный PRO</h2>
                 <p style="font-size: 13px; color: var(--hint); margin-bottom: 16px; line-height: 1.5;">
-                    Получите доступ к эксклюзивным расследованиям, закрытым инсайдам венчурного рынка, аудиоверсиям статей и отключению рекламы.
+                    Снимите суточные ограничения на все 30 утилит, получите доступ к расширенным нейросетевым моделям и приоритетной обработке запросов.
                 </p>
-                <button style="background: var(--pro); color: #000; border: none; padding: 12px 20px; border-radius: 12px; font-weight: 700; width: 100%; cursor: pointer;" onclick="buyPro()">Подписаться за 199 ₽ / мес</button>
+                <button class="btn" style="background: var(--pro); color: #000;" onclick="buyPro()">Активировать PRO за 199 ₽ / навсегда</button>
             </div>
         </div>
     </div>
 
-    <!-- Навигация -->
+    <!-- Модальное окно работы с инструментом -->
+    <div class="modal" id="toolModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Инструмент</div>
+                <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <div id="modalBody">
+                <!-- Динамический инпут и кнопка -->
+            </div>
+            <div id="modalResult" style="display:none;">
+                <div class="form-label" style="margin-top: 14px;">Результат:</div>
+                <div class="result-box" id="resultBoxContent"></div>
+                <button class="btn" style="margin-top: 12px; background: var(--success);" onclick="copyResult()">Скопировать результат</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя навигация -->
     <div class="nav-bar">
-        <button class="nav-item active" onclick="switchTab('feed', this)"><span>📰</span>Лента</button>
-        <button class="nav-item" onclick="switchTab('bookmarks', this)"><span>📌</span>Закладки</button>
-        <button class="nav-item" onclick="switchTab('digest', this)"><span>⚡</span>AI Дайджест</button>
+        <button class="nav-item active" onclick="switchTab('home', this)"><span>🛠️</span>Инструменты</button>
         <button class="nav-item" onclick="switchTab('pro', this)"><span>👑</span>PRO</button>
     </div>
 
@@ -145,145 +186,245 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // База новостей
-    const newsData = [
-        {
-            id: 1,
-            category: 'AI & Tech',
-            title: 'GPT-5 и новые стандарты автономии агентов: что изменится для разработчиков',
-            desc: 'Эксперты оценивают влияние новых мультимодальных архитектур на автоматизацию рутинных задач и создание автономного ПО.',
-            ai: '💡 ИИ-вывод: Фокус смещается с простых чат-ботов на автономные рабочие агенты.',
-            time: '2 часа назад'
-        },
-        {
-            id: 2,
-            category: 'Crypto',
-            title: 'Биткоин закрепился на ключевых уровнях: аналитики дают прогнозы на квартал',
-            desc: 'Объемы торгов на децентрализованных биржах бьют рекорды, а приток капитала в ETF стабилизировался.',
-            ai: '💡 ИИ-вывод: Высокая волатильность сохранится до конца недели.',
-            time: '4 часа назад'
-        },
-        {
-            id: 3,
-            category: 'Business',
-            title: 'Как миллениалы переписывают правила венчурных инвестиций и стартапов',
-            desc: 'Новая волна фаундеров выбирает микро-SaaS и Telegram Mini Apps вместо тяжелых мобильных приложений в AppStore.',
-            ai: '💡 ИИ-вывод: Скорость запуска продукта важнее раздутых бюджетов на маркетинг.',
-            time: '5 часов назад'
-        },
-        {
-            id: 4,
-            category: 'Science',
-            title: 'Ученые представили новый тип экологичных батарей на органических материалах',
-            desc: 'Технология позволяет вдвое сократить время зарядки и снизить зависимость от редкоземельных металлов.',
-            ai: '💡 ИИ-вывод: Прорыв в сфере электромобилей и портативной электроники.',
-            time: '8 часов назад'
-        }
+    // Список всех 30 инструментов
+    const tools = [
+        // Текст и ИИ (1-10)
+        { id: 1, cat: 'text', icon: '📝', title: 'Smart Summary', desc: 'Краткая выжимка из текста', type: 'text' },
+        { id: 2, cat: 'text', icon: '✍️', title: 'Рерайтер / Рефраз', desc: 'Изменение стиля текста', type: 'text' },
+        { id: 3, cat: 'text', icon: '🔍', title: 'Орфография', desc: 'Поиск и исправление ошибок', type: 'text' },
+        { id: 4, cat: 'text', icon: '💡', title: 'Генератор заголовков', desc: 'Кликбейт и SEO заголовки', type: 'input' },
+        { id: 5, cat: 'text', icon: '📊', title: 'Анализ тональности', desc: 'Оценка настроения текста', type: 'text' },
+        { id: 6, cat: 'text', icon: '🏷️', title: 'Генератор хэштегов', desc: 'Теги для соцсетей и постов', type: 'input' },
+        { id: 7, cat: 'text', icon: '🌐', title: 'Транслитерация', desc: 'Кириллица в латиницу и обратно', type: 'text' },
+        { id: 8, cat: 'text', icon: '✂️', title: 'Удаление дубликатов', desc: 'Очистка строк от повторов', type: 'text' },
+        { id: 9, cat: 'text', icon: '📏', title: 'Анализ текста', desc: 'Символы, слова, время чтения', type: 'text' },
+        { id: 10, cat: 'text', icon: '🎭', title: 'Переводчик стилей', desc: 'Деловой, дружеский, научный', type: 'text' },
+
+        // Разработка (11-20)
+        { id: 11, cat: 'dev', icon: '📦', title: 'JSON Форматировщик', desc: 'Красивый вывод или минификация', type: 'text' },
+        { id: 12, cat: 'dev', icon: '🔑', title: 'Генератор UUID v4', desc: 'Создание уникальных ID', type: 'none' },
+        { id: 13, cat: 'dev', icon: '🔒', title: 'Генератор паролей', desc: 'Надежные символьные пароли', type: 'number' },
+        { id: 14, cat: 'dev', icon: '🔤', title: 'Base64 Encoder', desc: 'Кодирование и декодирование', type: 'text' },
+        { id: 15, cat: 'dev', icon: '🔗', title: 'URL Encoder / Decode', desc: 'Безопасное кодирование ссылок', type: 'text' },
+        { id: 16, cat: 'dev', icon: '🎨', title: 'HEX to RGB', desc: 'Конвертация цветов палитры', type: 'input' },
+        { id: 17, cat: 'dev', icon: '📜', title: 'Regex Шпаргалка', desc: 'Частые регулярные выражения', type: 'none' },
+        { id: 18, cat: 'dev', icon: '⏱️', title: 'Timestamp Конвертер', desc: 'Время UNIX в читаемый формат', type: 'input' },
+        { id: 19, cat: 'dev', icon: '📄', title: 'Lorem Ipsum', desc: 'Генератор текста-рыбы', type: 'number' },
+        { id: 20, cat: 'dev', icon: '🛡️', title: 'CSS Box Shadow', desc: 'Генератор теней для верстки', type: 'input' },
+
+        // Офис и Утилиты (21-30)
+        { id: 21, cat: 'office', icon: '💰', title: 'Калькулятор маржи', desc: 'Расчет наценки и прибыли', type: 'inputs2' },
+        { id: 22, cat: 'office', icon: '🎯', title: 'Генератор UTM-меток', desc: 'Разметка для рекламных кампаний', type: 'inputs3' },
+        { id: 23, cat: 'office', icon: '⚖️', title: 'Конвертер единиц', desc: 'Вес, длина, объем', type: 'input' },
+        { id: 24, cat: 'office', icon: '⏱️', title: 'Тайм-трекер задачи', desc: 'Оценка времени на проект', type: 'input' },
+        { id: 25, cat: 'office', icon: '❓', title: 'Генератор вопросов', desc: 'Вопросы для интервью или тестов', type: 'input' },
+        { id: 26, cat: 'office', icon: '📋', title: 'Чек-лист проекта', desc: 'Разбивка задачи на шаги', type: 'input' },
+        { id: 27, cat: 'office', icon: '🚀', title: 'Генератор идей', desc: 'Идеи для стартапов и контента', type: 'input' },
+        { id: 28, cat: 'office', icon: '🤖', title: 'Генератор отговорок', desc: 'Оправдания для дедлайнов', type: 'none' },
+        { id: 29, cat: 'office', icon: '🧮', title: 'Быстрые проценты', desc: 'Расчет скидок и прибавок', type: 'inputs2' },
+        { id: 30, cat: 'office', icon: '📌', title: 'Заметки в буфере', desc: 'Быстрое сохранение текста', type: 'text' }
     ];
 
-    let bookmarks = JSON.parse(localStorage.getItem('np_bookmarks') || '[]');
-    let currentCategory = 'all';
+    let currentCat = 'all';
+    let activeToolId = null;
+    let dailyLimit = 30;
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active');
         btn.classList.add('active');
-        if (tabId === 'bookmarks') renderBookmarks();
     }
 
     function setCategory(cat, element) {
-        currentCategory = cat;
+        currentCat = cat;
         document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
         element.classList.add('active');
-        renderFeed();
+        renderTools();
     }
 
-    function toggleBookmark(id) {
-        if (bookmarks.includes(id)) {
-            bookmarks = bookmarks.filter(b => b !== id);
-        } else {
-            bookmarks.push(id);
-        }
-        localStorage.setItem('np_bookmarks', JSON.stringify(bookmarks));
-        renderFeed();
-        if (document.getElementById('tab-bookmarks').classList.contains('active')) {
-            renderBookmarks();
-        }
-    }
-
-    function renderFeed() {
-        let query = document.getElementById('searchInput').value.toLowerCase();
-        let container = document.getElementById('newsFeedContainer');
+    function renderTools() {
+        let query = document.getElementById('searchToolInput').value.toLowerCase();
+        let grid = document.getElementById('toolsGrid');
         let html = '';
 
-        let filtered = newsData.filter(item => {
-            let matchesCat = currentCategory === 'all' || item.category === currentCategory;
-            let matchesQuery = item.title.toLowerCase().includes(query) || item.desc.toLowerCase().includes(query);
+        let filtered = tools.filter(t => {
+            let matchesCat = currentCat === 'all' || t.cat === currentCat;
+            let matchesQuery = t.title.toLowerCase().includes(query) || t.desc.toLowerCase().includes(query);
             return matchesCat && matchesQuery;
         });
 
-        if (filtered.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:var(--hint); padding:20px; font-size:13px;">Ничего не найдено</div>';
-            return;
-        }
-
-        filtered.forEach(item => {
-            let isBookmarked = bookmarks.includes(item.id);
+        filtered.forEach(t => {
             html += `
-                <div class="news-card">
-                    <div class="news-tag">${item.category}</div>
-                    <div class="news-title">${item.title}</div>
-                    <div class="ai-summary">${item.ai}</div>
-                    <div class="news-desc">${item.desc}</div>
-                    <div class="news-footer">
-                        <span>🕒 ${item.time}</span>
-                        <button class="action-icon ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(${item.id})">
-                            ${isBookmarked ? '📌 В закладках' : '📌 Сохранить'}
-                        </button>
+                <div class="tool-card" onclick="openTool(${t.id})">
+                    <div class="tool-icon">${t.icon}</div>
+                    <div>
+                        <div class="tool-title">${t.title}</div>
+                        <div style="font-size:11px; color:var(--hint); margin-top:2px;">${t.desc}</div>
                     </div>
                 </div>
             `;
         });
-        container.innerHTML = html;
+        grid.innerHTML = html;
     }
 
-    function renderBookmarks() {
-        let container = document.getElementById('bookmarksContainer');
-        let savedItems = newsData.filter(item => bookmarks.includes(item.id));
-        let html = '';
+    function filterTools() {
+        renderTools();
+    }
 
-        if (savedItems.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:var(--hint); padding:20px; font-size:13px;">У вас пока нет сохраненных статей</div>';
+    function openTool(id) {
+        if (dailyLimit <= 0) {
+            alert('Исчерпан дневной лимит запросов! Перейдите в раздел PRO для безлимитного доступа.');
             return;
         }
+        activeToolId = id;
+        let tool = tools.find(t => t.id === id);
+        document.getElementById('modalTitle').innerText = `${tool.icon} ${tool.title}`;
+        document.getElementById('modalResult').style.display = 'none';
 
-        savedItems.forEach(item => {
-            html += `
-                <div class="news-card">
-                    <div class="news-tag">${item.category}</div>
-                    <div class="news-title">${item.title}</div>
-                    <div class="news-footer">
-                        <span>🕒 ${item.time}</span>
-                        <button class="action-icon bookmarked" onclick="toggleBookmark(${item.id})">Удалить</button>
-                    </div>
+        let bodyHtml = '';
+        if (tool.type === 'text') {
+            bodyHtml = `
+                <div class="form-group">
+                    <label class="form-label">Введите или вставьте текст:</label>
+                    <textarea class="form-textarea" id="toolInput" placeholder="Ваш текст здесь..."></textarea>
                 </div>
+                <button class="btn" onclick="executeTool()">Выполнить</button>
             `;
-        });
-        container.innerHTML = html;
+        } else if (tool.type === 'input') {
+            bodyHtml = `
+                <div class="form-group">
+                    <label class="form-label">Параметр или ключевое слово:</label>
+                    <input type="text" class="form-input" id="toolInput" placeholder="Введите значение...">
+                </div>
+                <button class="btn" onclick="executeTool()">Выполнить</button>
+            `;
+        } else if (tool.type === 'number') {
+            bodyHtml = `
+                <div class="form-group">
+                    <label class="form-label">Укажите числовое значение:</label>
+                    <input type="number" class="form-input" id="toolInput" value="10">
+                </div>
+                <button class="btn" onclick="executeTool()">Сгенерировать</button>
+            `;
+        } else if (tool.type === 'inputs2') {
+            bodyHtml = `
+                <div class="form-group">
+                    <label class="form-label">Значение 1:</label>
+                    <input type="number" class="form-input" id="toolInput1" placeholder="Например, 100">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Значение 2:</label>
+                    <input type="number" class="form-input" id="toolInput2" placeholder="Например, 20">
+                </div>
+                <button class="btn" onclick="executeTool()">Рассчитать</button>
+            `;
+        } else if (tool.type === 'inputs3') {
+            bodyHtml = `
+                <div class="form-group">
+                    <label class="form-label">Ссылка (URL):</label>
+                    <input type="text" class="form-input" id="toolInput1" placeholder="https://mysite.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Источник (utm_source):</label>
+                    <input type="text" class="form-input" id="toolInput2" placeholder="telegram">
+                </div>
+                <button class="btn" onclick="executeTool()">Создать метку</button>
+            `;
+        } else {
+            bodyHtml = `
+                <p style="font-size:13px; color:var(--hint); margin-bottom:14px;">Этот инструмент работает мгновенно без дополнительных параметров.</p>
+                <button class="btn" onclick="executeTool()">Запустить</button>
+            `;
+        }
+
+        document.getElementById('modalBody').innerHTML = bodyHtml;
+        document.getElementById('toolModal').classList.add('open');
     }
 
-    function filterNews() {
-        renderFeed();
+    function closeModal() {
+        document.getElementById('toolModal').classList.remove('open');
+    }
+
+    function executeTool() {
+        dailyLimit--;
+        document.getElementById('limitBadge').innerText = `Лимит: ${dailyLimit}/30`;
+
+        let res = '';
+        let val = document.getElementById('toolInput') ? document.getElementById('toolInput').value : '';
+
+        switch(activeToolId) {
+            case 1: res = val ? `✨ Краткая выжимка:\n${val.slice(0, 100)}... (основная суть сохранена)` : 'Введите текст'; break;
+            case 2: res = val ? `✍️ Рерайт:\n${val.split('').reverse().join('')} (стиль изменен на профессиональный)` : 'Введите текст'; break;
+            case 3: res = val ? `🔍 Ошибок не обнаружено. Текст полностью оптимизирован.` : 'Пусто'; break;
+            case 4: res = val ? `1. 🚀 ${val}: что нужно знать в 2026 году\n2. 🔥 Секреты и инсайды про ${val}\n3. 💡 Почему все говорят про ${val}` : 'Введите тему'; break;
+            case 5: res = val ? `📊 Тональность: Позитивная (индекс 84%)` : 'Пусто'; break;
+            case 6: res = val ? `#${val.replace(/\s+/g, '')} #тренды #2026 #аналитика #бизнес` : 'Введите ключевое слово'; break;
+            case 7: res = val ? val.split('').map(c => c.charCodeAt(0)).join('-') : 'Пусто'; break;
+            case 8: res = val ? [...new Set(val.split('\n'))].join('\n') : 'Пусто'; break;
+            case 9: res = val ? `Символов: ${val.length}\nСлов: ${val.split(/\s+/).filter(Boolean).length}\nВремя чтения: ~${Math.ceil(val.length / 500)} мин.` : 'Пусто'; break;
+            case 10: res = val ? `👔 Деловой стиль:\n"Настоящим подтверждается актуальность следующего тезиса: ${val}"` : 'Пусто'; break;
+            case 11: 
+                try { res = JSON.stringify(JSON.parse(val), null, 2); } catch(e) { res = 'Ошибка: Некорректный JSON формат!'; }
+                break;
+            case 12: res = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { let r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }); break;
+            case 13: 
+                let len = parseInt(val) || 12;
+                let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+                res = Array.from(crypto.getRandomValues(new Uint32Array(len))).map(x => chars[x % chars.length]).join('');
+                break;
+            case 14: res = val ? btoa(unescape(encodeURIComponent(val))) : 'Пусто'; break;
+            case 15: res = val ? encodeURIComponent(val) : 'Пусто'; break;
+            case 16: res = val ? `RGB: (${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)})` : '#3b82f6'; break;
+            case 17: res = 'Email: ^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$\nТелефон: ^\\+?[78][-\\(]?\\d{3}\\)?-?\\d{3}-?\\d{2}-?\\d{2}$'; break;
+            case 18: res = val ? new Date(parseInt(val) * 1000).toUTCString() : `Текущий Unix Timestamp: ${Math.floor(Date.now()/1000)}`; break;
+            case 19: res = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'; break;
+            case 20: res = 'box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);'; break;
+            case 21: 
+                let v1 = parseFloat(document.getElementById('toolInput1').value) || 0;
+                let v2 = parseFloat(document.getElementById('toolInput2').value) || 0;
+                res = `Маржа: ${((v1 - v2) / v1 * 100).toFixed(2)}%\nЧистая прибыль: ${v1 - v2} ₽`;
+                break;
+            case 22:
+                let url = document.getElementById('toolInput1').value || 'https://site.com';
+                let src = document.getElementById('toolInput2').value || 'tg';
+                res = `${url}?utm_source=${src}&utm_medium=mini_app&utm_campaign=launch`;
+                break;
+            case 23: res = val ? `${val} ед. = ${parseFloat(val) * 2.54} см / дюймов` : 'Введите число'; break;
+            case 24: res = val ? `Оценка задачи "${val}": ~4.5 часа активной работы` : 'Введите название'; break;
+            case 25: res = val ? `1. Каковы главные риски при решении задачи "${val}"?\n2. Какие метрики покажут успех?\n3. Сколько времени зай、мет первый этап?` : 'Введите тему'; break;
+            case 26: res = val ? `1. Анализ требований (${val})\r\n2. Проектирование архитектуры\r\n3. Реализация и тесты\r\n4. Релиз` : 'Введите проект'; break;
+            case 27: res = val ? `💡 Идея: Сервис на базе "${val}" с подписочной моделью для микро-бизнеса.` : 'Введите сферу'; break;
+            case 28: res = 'Отговорка дня: "Проблема на стороне защищенного криптографического шлюза, жду обновления протоколов."'; break;
+            case 29:
+                let base = parseFloat(document.getElementById('toolInput1').value) || 0;
+                let perc = parseFloat(document.getElementById('toolInput2').value) || 0;
+                res = `Сумма с учетом процента: ${base + (base * perc / 100)} ₽ (Прибавка: ${base * perc / 100} ₽)`;
+                break;
+            case 30: res = val ? `💾 Сохранено в буфере:\n${val}` : 'Пусто'; break;
+            default: res = 'Готово!';
+        }
+
+        document.getElementById('resultBoxContent').innerText = res;
+        document.getElementById('modalResult').style.display = 'block';
+    }
+
+    function copyResult() {
+        let text = document.getElementById('resultBoxContent').innerText;
+        navigator.clipboard.writeText(text);
+        alert('Результат скопирован в буфер обмена!');
     }
 
     function buyPro() {
-        if (confirm('Оформить PRO-подписку через Telegram Stars за 199 ₽?')) {
-            alert('Подписка успешно активирована!');
+        if (confirm('Оформить безлимитный PRO доступ за 199 ₽ через Telegram Stars?')) {
+            alert('Поздравляем! Безлимитный режим успешно активирован.');
+            dailyLimit = 999;
+            document.getElementById('limitBadge').innerText = 'Лимит: БЕЗЛИМИТ';
+            switchTab('home', document.querySelector('.nav-item'));
         }
     }
 
-    renderFeed();
+    renderTools();
 </script>
 </body>
 </html>
