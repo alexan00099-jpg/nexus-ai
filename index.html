@@ -3,42 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DeFiPulse Super-App</title>
+    <title>Empire & Artifacts MMORPG</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: var(--tg-theme-bg-color, #070b14);
-            --text: var(--tg-theme-text-color, #f8fafc);
-            --card: var(--tg-theme-secondary-bg-color, #0f172a);
-            --accent: var(--tg-theme-button-color, #10b981);
+            --bg: var(--tg-theme-bg-color, #0f1219);
+            --text: var(--tg-theme-text-color, #f1f5f9);
+            --card: var(--tg-theme-secondary-bg-color, #1a1f2c);
+            --accent: var(--tg-theme-button-color, #f59e0b);
             --accent-text: var(--tg-theme-button-text-color, #000000);
             --hint: var(--tg-theme-hint-color, #64748b);
-            --border: rgba(255, 255, 255, 0.06);
-            --success: #10b981;
+            --border: rgba(255, 255, 255, 0.08);
+            --gold: #f59e0b;
+            --mana: #3b82f6;
+            --gem: #ec4899;
+            --success: #22c55e;
             --danger: #ef4444;
-            --purple: #8b5cf6;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; user-select: none; }
         body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 
         .container { padding: 16px; max-width: 600px; margin: 0 auto; }
 
-        /* Шапка кошелька */
-        .wallet-card {
-            background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 20px; padding: 20px; margin-bottom: 16px;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15);
+        /* Верхняя панель ресурсов */
+        .resources-bar {
+            background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 18px; padding: 14px; margin-bottom: 16px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
-        .wallet-title { font-size: 12px; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .wallet-balance { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 14px; }
-        .wallet-actions { display: flex; gap: 10px; }
-        .wallet-btn {
-            flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #fff; padding: 10px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer;
-            text-align: center; backdrop-filter: blur(4px);
-        }
-        .wallet-btn.primary { background: var(--success); color: #000; border: none; }
+        .res-item { text-align: center; }
+        .res-title { font-size: 10px; color: var(--hint); text-transform: uppercase; margin-bottom: 2px; }
+        .res-val { font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 4px; }
 
         /* Навигация по модулям (Скролл) */
         .modules-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
@@ -51,36 +48,33 @@
         .chip.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 
         /* Секции модулей */
-        .module-section { display: none; background: var(--card); border-radius: 20px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
-        .module-section.active { display: block; }
-        .section-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .game-module { display: none; background: var(--card); border-radius: 20px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
+        .game-module.active { display: block; }
+        .module-header { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Элементы списков (Токены, Стейкинг, Пул) */
-        .crypto-item {
+        /* Карточки сущностей */
+        .entity-card {
             background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
             padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
         }
-        .crypto-info { display: flex; align-items: center; gap: 10px; }
-        .crypto-icon { width: 36px; height: 36px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; }
-        .crypto-name { font-size: 14px; font-weight: 700; }
-        .crypto-desc { font-size: 11px; color: var(--hint); }
-        .crypto-price { text-align: right; }
-        .crypto-val { font-size: 14px; font-weight: 700; }
-        .crypto-change { font-size: 11px; color: var(--success); }
+        .entity-info { display: flex; align-items: center; gap: 10px; }
+        .entity-avatar { width: 42px; height: 42px; border-radius: 12px; background: #2a3447; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .entity-name { font-size: 14px; font-weight: 700; }
+        .entity-desc { font-size: 11px; color: var(--hint); }
 
-        /* Формы и обмены */
-        .swap-box { background: var(--bg); border-radius: 14px; padding: 14px; border: 1px solid var(--border); margin-bottom: 10px; }
-        .swap-label { font-size: 11px; color: var(--hint); margin-bottom: 4px; display: flex; justify-content: space-between; }
-        .swap-input-row { display: flex; justify-content: space-between; align-items: center; }
-        .swap-input { background: none; border: none; color: var(--text); font-size: 18px; font-weight: 700; width: 60%; outline: none; }
-        .token-select { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
-
-        .btn {
+        .btn-action {
             background: var(--accent); color: var(--accent-text); border: none;
-            padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; width: 100%;
-            cursor: pointer; text-align: center; text-transform: uppercase; margin-top: 10px;
+            padding: 8px 14px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer;
+            text-transform: uppercase;
         }
-        .btn:active { transform: scale(0.98); }
+        .btn-action:active { transform: scale(0.95); }
+        .btn-action:disabled { background: var(--hint); opacity: 0.5; cursor: not-allowed; }
+
+        /* Шахты и постройки */
+        .mine-card { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+        .mine-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .progress-bar { width: 100%; height: 6px; background: #2a3447; border-radius: 3px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
 
         /* Нижняя навигация */
         .nav-bar {
@@ -100,157 +94,201 @@
 <body>
 
     <div class="container">
-        <!-- Шапка кошелька -->
-        <div class="wallet-card">
-            <div class="wallet-title">Общий баланс портфеля</div>
-            <div class="wallet-balance" id="totalPortfolioVal">$12,450.80</div>
-            <div class="wallet-actions">
-                <button class="wallet-btn primary" onclick="openReceiveModal()">📥 Пополнить</button>
-                <button class="wallet-btn" onclick="openSendModal()">📤 Отправить</button>
-                <button class="wallet-btn" onclick="openHistoryModal()">📋 История</button>
+        <!-- Панель ресурсов -->
+        <div class="resources-bar">
+            <div class="res-item">
+                <div class="res-title">Золото</div>
+                <div class="res-val" id="resGold" style="color: var(--gold);">🪙 2,450</div>
+            </div>
+            <div class="res-item">
+                <div class="res-title">Мана</div>
+                <div class="res-val" id="resMana" style="color: var(--mana);">🔮 820</div>
+            </div>
+            <div class="res-item">
+                <div class="res-title">Кристаллы</div>
+                <div class="res-val" id="resGems" style="color: var(--gem);">💎 150</div>
             </div>
         </div>
 
-        <!-- Навигация модулей (Чипсы) -->
+        <!-- Навигация модулей (Скролл) -->
         <div class="modules-scroll">
-            <button class="chip active" onclick="switchModule('portfolio', this)">💼 Портфель</button>
-            <button class="chip" onclick="switchModule('swap', this)">⚡ DEX Обмен</button>
-            <button class="chip" onclick="switchModule('staking', this)">🔒 Стейкинг</button>
-            <button class="chip" onclick="switchModule('launchpad', this)">🚀 Лаунчпад</button>
-            <button class="chip" onclick="switchModule('p2p', this)">🤝 P2P Рынок</button>
-            <button class="chip" onclick="switchModule('analytics', this)">📈 Аналитика</button>
+            <button class="chip active" onclick="switchModule('castle', this)">🏰 Замок и Шахты</button>
+            <button class="chip" onclick="switchModule('heroes', this)">⚔️ Герои</button>
+            <button class="chip" onclick="switchModule('expedition', this)">🗺️ Экспедиции</button>
+            <button class="chip" onclick="switchModule('arena', this)">🏟️ PvP Арена</button>
+            <button class="chip" onclick="switchModule('craft', this)">🛠️ Кузница</button>
+            <button class="chip" onclick="switchModule('market', this)">⚖️ Аукцион</button>
+            <button class="chip" onclick="switchModule('guild', this)">🛡️ Клан</button>
         </div>
 
-        <!-- МОДУЛЬ 1: ПОРТФЕЛЬ -->
-        <div id="mod-portfolio" class="module-section active">
-            <div class="section-title"><span>Активы в сети TON / EVM</span><span style="font-size: 12px; color: var(--success);">+4.8% за 24ч</span></div>
-            <div id="assetsList">
+        <!-- МОДУЛЬ 1: ЗАМОК И ШАХТЫ -->
+        <div id="mod-castle" class="game-module active">
+            <div class="module-header"><span>Экономика империи</span><span style="font-size:12px; color:var(--hint);">Уровень замка: 4</span></div>
+            
+            <div class="mine-card">
+                <div class="mine-top">
+                    <div>
+                        <div style="font-weight:700; font-size:14px;">🪙 Золотой рудник</div>
+                        <div style="font-size:11px; color:var(--hint);">Доход: 120 мин/час</div>
+                    </div>
+                    <button class="btn-action" onclick="collectMine('gold')">Собрать</button>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" id="goldProgress" style="width: 65%;"></div></div>
+            </div>
+
+            <div class="mine-card">
+                <div class="mine-top">
+                    <div>
+                        <div style="font-weight:700; font-size:14px;">🔮 Башня маны</div>
+                        <div style="font-size:11px; color:var(--hint);">Доход: 80 мин/час</div>
+                    </div>
+                    <button class="btn-action" onclick="collectMine('mana')">Собрать</button>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" id="manaProgress" style="width: 40%;"></div></div>
+            </div>
+        </div>
+
+        <!-- МОДУЛЬ 2: ГЕРОИ -->
+        <div id="mod-heroes" class="game-module">
+            <div class="module-header"><span>Отряд героев</span><span>⚔️ Сила: 4,850</span></div>
+            <div id="heroesList">
                 <!-- Динамически заполнится -->
             </div>
         </div>
 
-        <!-- МОДУЛЬ 2: DEX ОБМЕННИК -->
-        <div id="mod-swap" class="module-section">
-            <div class="section-title">Быстрый обмен токенов</div>
-            <div class="swap-box">
-                <div class="swap-label"><span>Вы отдаете</span><span>Баланс: 45.2 TON</span></div>
-                <div class="swap-input-row">
-                    <input type="number" class="swap-input" id="fromAmount" value="5.0" placeholder="0.0">
-                    <select class="token-select"><option>TON</option><option>USDT</option><option>BTC</option></select>
-                </div>
-            </div>
-            <div style="text-align: center; margin: -6px 0; font-size: 16px; color: var(--hint);">🔄</div>
-            <div class="swap-box">
-                <div class="swap-label"><span>Вы получаете (примерно)</span><span>Баланс: 280.50 USDT</span></div>
-                <div class="swap-input-row">
-                    <input type="text" class="swap-input" id="toAmount" value="31.25" readonly>
-                    <select class="token-select"><option>USDT</option><option>TON</option><option>ETH</option></select>
-                </div>
-            </div>
-            <button class="btn" onclick="executeSwap()">Совершить обмен</button>
-        </div>
-
-        <!-- МОДУЛЬ 3: СТЕЙКИНГ -->
-        <div id="mod-staking" class="module-section">
-            <div class="section-title">Пассивный доход (APY)</div>
-            <div class="crypto-item">
-                <div class="crypto-info">
-                    <div class="crypto-icon" style="background:#0284c7; color:#fff;">T</div>
+        <!-- МОДУЛЬ 3: ЭКСПЕДИЦИИ -->
+        <div id="mod-expedition" class="game-module">
+            <div class="module-header"><span>Подземелья и рейды</span></div>
+            <div class="entity-card">
+                <div class="entity-info">
+                    <div class="entity-avatar">🐉</div>
                     <div>
-                        <div class="crypto-name">TON Liquid Staking</div>
-                        <div class="crypto-desc">Доходность: 14.5% годовых</div>
+                        <div class="entity-name">Логово Дракона (Элитное)</div>
+                        <div class="entity-desc">Награда: 500 Золота, 50 Кристаллов. Время: 3 мин.</div>
                     </div>
                 </div>
-                <button class="wallet-btn primary" style="padding: 6px 12px; font-size: 12px;" onclick="stakeToken('TON', 14.5)">Стейкать</button>
+                <button class="btn-action" onclick="startExpedition(3, 'Дракон')">В бой</button>
             </div>
-            <div class="crypto-item">
-                <div class="crypto-info">
-                    <div class="crypto-icon" style="background:#16a34a; color:#fff;">U</div>
+            <div class="entity-card">
+                <div class="entity-info">
+                    <div class="entity-avatar">💀</div>
                     <div>
-                        <div class="crypto-name">USDT High-Yield Pool</div>
-                        <div class="crypto-desc">Доходность: 21.0% годовых</div>
+                        <div class="entity-name">Проклятые катакомбы</div>
+                        <div class="entity-desc">Награда: 200 Золота, Редкий артефакт. Время: 1 мин.</div>
                     </div>
                 </div>
-                <button class="wallet-btn primary" style="padding: 6px 12px; font-size: 12px;" onclick="stakeToken('USDT', 21.0)">Стейкать</button>
+                <button class="btn-action" onclick="startExpedition(1, 'Катакомбы')">В бой</button>
             </div>
         </div>
 
-        <!-- МОДУЛЬ 4: ЛАУНЧПАД -->
-        <div id="mod-launchpad" class="module-section">
-            <div class="section-title">Ранние пресейлы токенов</div>
-            <div class="crypto-item">
-                <div class="crypto-info">
-                    <div class="crypto-icon" style="background:#9333ea; color:#fff;">AI</div>
+        <!-- МОДУЛЬ 4: АРЕНА -->
+        <div id="mod-arena" class="game-module">
+            <div class="module-header"><span>Рейтинг игроков</span><span>Трофеи: 1,420 🏆</span></div>
+            <div class="entity-card">
+                <div class="entity-info">
+                    <div class="entity-avatar">🛡️</div>
                     <div>
-                        <div class="crypto-name">NeuralProtocol ($NEURO)</div>
-                        <div class="crypto-desc">Собрано: $450k / $500k (90%)</div>
+                        <div class="entity-name">ShadowLord (Сила: 4,200)</div>
+                        <div class="entity-desc">Ранг #14 в лиге гладиаторов</div>
                     </div>
                 </div>
-                <button class="wallet-btn primary" style="padding: 6px 12px; font-size: 12px;" onclick="participateLaunchpad()">Участвовать</button>
+                <button class="btn-action" onclick="fightArena('ShadowLord')">Атаковать</button>
+            </div>
+            <div class="entity-card">
+                <div class="entity-info">
+                    <div class="entity-avatar">🗡️</div>
+                    <div>
+                        <div class="entity-name">Valkyrie_X (Сила: 4,650)</div>
+                        <div class="entity-desc">Ранг #12 в лиге гладиаторов</div>
+                    </div>
+                </div>
+                <button class="btn-action" onclick="fightArena('Valkyrie_X')">Атаковать</button>
             </div>
         </div>
 
-        <!-- МОДУЛЬ 5: P2P РЫНОК -->
-        <div id="mod-p2p" class="module-section">
-            <div class="section-title">P2P Сделки без посредников</div>
-            <div class="crypto-item">
-                <div class="crypto-info">
-                    <div class="crypto-icon">👤</div>
+        <!-- МОДУЛЬ 5: КУЗНИЦА (КРАФТ) -->
+        <div id="mod-craft" class="game-module">
+            <div class="module-header"><span>Создание экипировки</span></div>
+            <div class="entity-card">
+                <div class="entity-info">
+                    <div class="entity-avatar">⚔️</div>
                     <div>
-                        <div class="crypto-name">CryptoKing_99 (98% сделок)</div>
-                        <div class="crypto-desc">Продает 500 TON за USDT (Лимит: 100-1000)</div>
+                        <div class="entity-name">Меч Ярости (+500 к атаке)</div>
+                        <div class="entity-desc">Цена: 1,000 Золота + 200 Маны</div>
                     </div>
                 </div>
-                <button class="wallet-btn" style="padding: 6px 12px; font-size: 12px;" onclick="alert('Ордер принят в работу!')">Купить</button>
+                <button class="btn-action" onclick="craftItem('Меч Ярости', 1000, 200)">Скрафтить</button>
             </div>
         </div>
 
-        <!-- МОДУЛЬ 6: АНАЛИТИКА -->
-        <div id="mod-analytics" class="module-section">
-            <div class="section-title">Рыночные тренды и газ</div>
-            <div style="font-size: 13px; color: var(--hint); line-height: 1.6;">
-                <p>⛽ Текущая комиссия в сети TON: <strong>0.005 TON</strong></p>
-                <p>📊 Индекс страха и жадности крипто-рынка: <strong>74 (Жадность)</strong></p>
-                <p>💎 Доминирование Биткоина: <strong>54.2%</strong></p>
+        <!-- МОДУЛЬ 6: АУКЦИОН -->
+        <div id="mod-market" class="game-module">
+            <div class="module-header"><span>Рынок игроков</span></div>
+            <div class="entity-card">
+                <div class="entity-info">
+                    <div class="entity-avatar">💎</div>
+                    <div>
+                        <div class="entity-name">Эссенция дракона (x5)</div>
+                        <div class="entity-desc">Продавец: Arthur_King | Цена: 450 Кристаллов</div>
+                    </div>
+                </div>
+                <button class="btn-action" onclick="alert('Лот успешно выкуплен!')">Купить</button>
+            </div>
+        </div>
+
+        <!-- МОДУЛЬ 7: КЛАН -->
+        <div id="mod-guild" class="game-module">
+            <div class="module-header"><span>Гильдия «Valhalla»</span><span>Уровень: 8 👑</span></div>
+            <div style="font-size: 13px; color: var(--hint); line-height: 1.5;">
+                <p>👥 Участников: 28 / 30</p>
+                <p>💰 Казна клана: 45,200 золота</p>
+                <p>⚡ Бонусы: +15% к добыче ресурсов, +10% к силе героев</p>
+                <button class="btn-action" style="margin-top: 14px; width: 100%;" onclick="alert('Взнос в казну отправлен!')">Внести вклад в казну</button>
             </div>
         </div>
     </div>
 
     <!-- Нижняя навигация -->
     <div class="nav-bar">
-        <button class="nav-item active" onclick="switchTab('terminal', this)"><span>💳</span>Терминал</button>
-        <button class="nav-item" onclick="switchTab('earn', this)"><span>🎁</span>Earn</button>
-        <button class="nav-item" onclick="switchTab('settings', this)"><span>⚙️</span>Настройки</button>
+        <button class="nav-item active" onclick="switchTab('game', this)"><span>🏰</span>Империя</button>
+        <button class="nav-item" onclick="switchTab('quests', this)"><span>📜</span>Квесты</button>
+        <button class="nav-item" onclick="switchTab('profile', this)"><span>👤</span>Профиль</button>
     </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    const assets = [
-        { icon: '💎', name: 'Toncoin', ticker: 'TON', amount: '45.2 TON', price: '$285.50', change: '+5.4%' },
-        { icon: '💵', name: 'Tether USD', ticker: 'USDT', amount: '8,450.00 USDT', price: '$8,450.00', change: '0.0%' },
-        { icon: '₿', name: 'Bitcoin', ticker: 'BTC', amount: '0.035 BTC', price: '$2,310.30', change: '+2.1%' },
-        { icon: '🟣', name: 'Solana', ticker: 'SOL', amount: '6.4 SOL', price: '$1,405.00', change: '-1.2%' }
+    let gold = 2450;
+    let mana = 820;
+    let gems = 150;
+
+    const heroes = [
+        { name: 'Артём Паладин', role: 'Танк', level: 45, power: '1,850', icon: '🛡️' },
+        { name: 'Линда Маг', role: 'ДД', level: 42, power: '2,100', icon: '🔮' },
+        { name: 'Тень Рога', role: 'Ассасин', level: 38, power: '900', icon: '🗡️' }
     ];
 
-    function renderAssets() {
-        let container = document.getElementById('assetsList');
+    function updateResources() {
+        document.getElementById('resGold').innerText = `🪙 ${gold.toLocaleString()}`;
+        document.getElementById('resMana').innerText = `🔮 ${mana.toLocaleString()}`;
+        document.getElementById('resGems').innerText = `💎 ${gems.toLocaleString()}`;
+    }
+
+    function renderHeroes() {
+        let container = document.getElementById('heroesList');
         let html = '';
-        assets.forEach(a => {
+        heroes.forEach(h => {
             html += `
-                <div class="crypto-item">
-                    <div class="crypto-info">
-                        <div class="crypto-icon">${a.icon}</div>
+                <div class="entity-card">
+                    <div class="entity-info">
+                        <div class="entity-avatar">${h.icon}</div>
                         <div>
-                            <div class="crypto-name">${a.name} (${a.ticker})</div>
-                            <div class="crypto-desc">${a.amount}</div>
+                            <div class="entity-name">${h.name} (${h.role})</div>
+                            <div class="entity-desc">Уровень ${h.level} | Сила: ${h.power}</div>
                         </div>
                     </div>
-                    <div class="crypto-price">
-                        <div class="crypto-val">${a.price}</div>
-                        <div class="crypto-change">${a.change}</div>
-                    </div>
+                    <button class="btn-action" onclick="upgradeHero('${h.name}')">Прокачать</button>
                 </div>
             `;
         });
@@ -258,7 +296,7 @@
     }
 
     function switchModule(modId, btn) {
-        document.querySelectorAll('.module-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.game-module').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.modules-scroll .chip').forEach(el => el.classList.remove('active'));
         document.getElementById('mod-' + modId).classList.add('active');
         btn.classList.add('active');
@@ -267,53 +305,60 @@
     function switchTab(tabId, btn) {
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         btn.classList.add('active');
-        if (tabId === 'earn') {
-            alert('Раздел квестов и Earn-наград находится в разработке.');
-        } else if (tabId === 'settings') {
-            alert('Настройки сети, безопасности и языка.');
+        if (tabId === 'quests') alert('Активные квесты: Победить 5 боссов (3/5)');
+        if (tabId === 'profile') alert('Профиль игрока: ID #89421, Статус: Владелец земель.');
+    }
+
+    function collectMine(type) {
+        if (type === 'gold') {
+            gold += 350;
+            alert('Собрано 350 золота!');
+        } else {
+            mana += 180;
+            alert('Собрано 180 маны!');
         }
+        updateResources();
     }
 
-    function openReceiveModal() {
-        alert('Ваш адрес кошелька скопирован в буфер обмена: UQDr...49xK');
-    }
-
-    function openSendModal() {
-        let recipient = prompt('Введите адрес получателя (TON / EVM):');
-        if (recipient) {
-            let amount = prompt('Введите сумму перевода:');
-            if (amount) alert(`Успешно отправлено ${amount} на адрес ${recipient}!`);
-        }
-    }
-
-    function openHistoryModal() {
-        alert('Последние транзакции:\n1. Swap 10 TON -> 62.5 USDT (Успешно)\n2. Deposit 1000 USDT (Успешно)');
-    }
-
-    function executeSwap() {
-        let val = document.getElementById('fromAmount').value;
-        if (!val || val <= 0) {
-            alert('Введите корректную сумму для обмена.');
+    function upgradeHero(name) {
+        if (gold < 500) {
+            alert('Недостаточно золота для прокачки героя (нужно 500)!');
             return;
         }
-        alert(`Обмен ${val} TON выполнен успешно! Баланс обновлен.`);
+        gold -= 500;
+        updateResources();
+        alert(`Герой ${name} успешно прокачан!`);
     }
 
-    function stakeToken(token, apy) {
-        let amount = prompt(`Сколько ${token} вы хотите отправить в стейкинг под ${apy}% годовых?`);
-        if (amount) {
-            alert(`Успешно! ${amount} ${token} заблокированы в пул ликвидности.`);
+    function startExpedition(minutes, name) {
+        alert(`Экспедиция в локацию "${name}" началась! Отряд вернется через ${minutes} мин.`);
+    }
+
+    function fightArena(rival) {
+        let win = Math.random() > 0.3;
+        if (win) {
+            gold += 400;
+            gems += 15;
+            alert(`🎉 Победа над ${rival}! Получено: 400 золота, 15 кристаллов.`);
+        } else {
+            alert(`💥 Поражение от ${rival}. Усильте отряд в кузнице.`);
         }
+        updateResources();
     }
 
-    function participateLaunchpad() {
-        let amount = prompt('Сколько USDT вы хотите инвестировать в пресейл $NEURO?');
-        if (amount) {
-            alert(`Поздравляем! Вы успешно выкупили токены на сумму ${amount} USDT.`);
+    function craftItem(item, costGold, costMana) {
+        if (gold < costGold || mana < costMana) {
+            alert('Недостаточно ресурсов для крафта!');
+            return;
         }
+        gold -= costGold;
+        mana -= costMana;
+        updateResources();
+        alert(`🎉 Предмет "${item" успешно создан и добавлен в инвентарь!`);
     }
 
-    renderAssets();
+    renderHeroes();
+    updateResources();
 </script>
 </body>
 </html>
