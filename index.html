@@ -3,323 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chronos 3D</title>
+    <!-- Подключаем Three.js и Telegram WebApp через CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: var(--tg-theme-bg-color, #0a0e17);
-            --text: var(--tg-theme-text-color, #f3f4f6);
-            --card: var(--tg-theme-secondary-bg-color, #111827);
-            --accent: var(--tg-theme-button-color, #f59e0b);
-            --accent-text: var(--tg-theme-button-text-color, #ffffff);
-            --hint: var(--tg-theme-hint-color, #9ca3af);
-            --border: rgba(255, 255, 255, 0.08);
-            --success: #10b981;
-            --danger: #ef4444;
+            --bg: #030712;
+            --panel: rgba(15, 23, 42, 0.85);
+            --accent: #f59e0b;
+            --text: #f8fafc;
+            --hint: #94a3b8;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; user-select: none; }
-        body { background: var(--bg); color: var(--text); padding-bottom: 80px; }
+        body { background: var(--bg); color: var(--text); overflow: hidden; width: 100vw; height: 100vh; }
 
-        .container { padding: 14px; max-width: 550px; margin: 0 auto; }
+        #webgl-container { position: absolute; inset: 0; z-index: 1; }
 
-        /* Верхняя панель ресурсов */
-        .resources-bar {
-            display: flex; justify-content: space-around; background: var(--card);
-            padding: 10px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 14px;
-            font-size: 13px; font-weight: bold;
+        /* HUD интерфейс поверх 3D сцены */
+        .hud {
+            position: absolute; top: 0; left: 0; right: 0; padding: 14px;
+            display: flex; justify-content: space-between; align-items: center; pointer-events: none;
+            z-index: 10;
         }
-        .res-item { display: flex; align-items: center; gap: 4px; }
-
-        /* Вкладки */
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .card {
-            background: var(--card); border-radius: 14px; padding: 14px;
-            margin-bottom: 12px; border: 1px solid var(--border);
+        .hud-badge {
+            background: var(--panel); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 14px; border-radius: 12px; font-size: 13px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
-        .card h3 { font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 
-        .btn {
-            background: var(--accent); color: var(--accent-text); border: none;
-            padding: 10px 14px; border-radius: 8px; font-weight: 600; width: 100%;
-            cursor: pointer; font-size: 13px; transition: transform 0.1s;
-        }
-        .btn:active { transform: scale(0.97); }
-        .btn-secondary { background: #374151; color: #fff; }
+        .bars-box { position: absolute; top: 65px; left: 14px; right: 14px; pointer-events: none; z-index: 10; display: flex; flex-direction: column; gap: 6px; }
+        .bar-bg { background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        .bar-fill { background: #ef4444; height: 100%; width: 100%; transition: width 0.1s; }
 
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-        /* Навигация */
-        .nav-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: var(--card); display: flex; justify-content: space-around;
-            padding: 8px 0; border-top: 1px solid var(--border); z-index: 100;
+        /* Виртуальный джойстик управления */
+        .joystick-zone { position: absolute; inset: 0; z-index: 5; touch-action: none; }
+        
+        .action-btn {
+            position: absolute; bottom: 30px; right: 30px; width: 70px; height: 70px;
+            background: var(--accent); border-radius: 50%; border: none; z-index: 10;
+            font-size: 28px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); cursor: pointer;
         }
-        .nav-item {
-            background: none; border: none; color: var(--hint);
-            font-size: 10px; cursor: pointer; text-align: center; flex: 1;
-        }
-        .nav-item.active { color: var(--accent); font-weight: bold; }
-        .nav-item span { display: block; font-size: 18px; margin-bottom: 2px; }
-
-        .log-box {
-            background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px;
-            font-size: 11px; color: var(--hint); height: 80px; overflow-y: auto; margin-top: 8px;
-        }
+        .action-btn:active { transform: scale(0.92); }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Ресурсы -->
-        <div class="resources-bar">
-            <div class="res-item">🪙 <span id="goldVal">150</span></div>
-            <div class="res-item">💎 <span id="gemVal">5</span></div>
-            <div class="res-item">🍖 <span id="meatVal">10</span></div>
-        </div>
-
-        <!-- ВКЛАДКА 1: ТАВЕРНА (База и доход) -->
-        <div id="tab-tavern" class="tab-content active">
-            <div class="card">
-                <h3>🍺 Таверна «Пьяный Дракон»</h3>
-                <p style="font-size: 12px; color: var(--hint); margin-bottom: 10px;">Привлекает путников и приносит стабильный доход золота.</p>
-                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
-                    <span>Уровень: <strong id="tavernLvl">1</strong></span>
-                    <span>Доход: <strong style="color:var(--success)">+<span id="tavernIncome">2</span> зол/сек</strong></span>
-                </div>
-                <button class="btn" onclick="upgradeTavern()">Улучшить таверну (<span id="tavernCost">100</span> 🪙)</button>
-            </div>
-
-            <div class="card">
-                <h3>📜 Журнал событий гильдии</h3>
-                <div class="log-box" id="gameLog">
-                    [00:00] Добро пожаловать в гильдию, Мастер! Нанимайте героев и отправляйте их в походы.
-                </div>
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА 2: ГЕРОИ (Ростер) -->
-        <div id="tab-heroes" class="tab-content">
-            <div class="card">
-                <h3>⚔️ Нанять искателя приключений</h3>
-                <p style="font-size: 12px; color: var(--hint); margin-bottom: 10px;">Герои ходят в подземелья и добывают ценные ресурсы.</p>
-                <button class="btn" onclick="hireHero()">Нанять героя (300 🪙)</button>
-            </div>
-            <div id="heroList">
-                <!-- Рендер героев -->
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА 3: ПОДЗЕМОЧНЫЕ ВЫЛАЗКИ -->
-        <div id="tab-dungeon" class="tab-content">
-            <div class="card">
-                <h3>🕳️ Экспедиция в подземелье</h3>
-                <p style="font-size: 12px; color: var(--hint); margin-bottom: 10px;">Отправьте героев в поход за рудой и редкими артефактами.</p>
-                
-                <div style="margin-bottom: 10px; font-size: 13px;">
-                    <label>Выбрать локацию:</label>
-                    <select id="dungeonSelect" style="width:1px; width:100%; padding:8px; margin-top:4px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px;">
-                        <option value="1">Темный Лес (Сложность: Легко)</option>
-                        <option value="2">Заброшенные Руины (Сложность: Средне)</option>
-                    </select>
-                </div>
-
-                <div id="expeditionStatus" style="font-size: 12px; color: var(--accent); margin-bottom: 8px; text-align: center;">Статус: Свободны</div>
-                <button class="btn" id="dungeonBtn" onclick="startExpedition()">Начать экспедицию</button>
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА 4: КУЗНИЦА И КРАФТ -->
-        <div id="tab-forge" class="tab-content">
-            <div class="card">
-                <h3>⚒️ Кузница артефактов</h3>
-                <p style="font-size: 12px; color: var(--hint); margin-bottom: 10px;">Создавайте мощное снаряжение для усиления вашей гильдии.</p>
-                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
-                    <span>Железо: <strong id="ironVal">0</strong></span>
-                    <span>Эссенция: <strong id="essenceVal">0</strong></span>
-                </div>
-                <button class="btn btn-secondary" onclick="craftItem()" style="margin-bottom: 6px;">Сковать Рунический Меч (5 Железа)</button>
-            </div>
-        </div>
+    <div class="hud">
+        <div class="hud-badge">🛡️ Уровень: <span id="uiLvl">1</span></div>
+        <div class="hud-badge">🪙 Золото: <span id="uiGold">0</span></div>
     </div>
 
-    <!-- Навигация -->
-    <div class="nav-bar">
-        <button class="nav-item active" onclick="switchTab('tavern', this)"><span>🍺</span>Таверна</button>
-        <button class="nav-item" onclick="switchTab('heroes', this)"><span>⚔️</span>Герои</button>
-        <button class="nav-item" onclick="switchTab('dungeon', this)"><span>🕳️</span>Поход</button>
-        <button class="nav-item" onclick="switchTab('forge', this)"><span>⚒️</span>Кузница</button>
+    <div class="bars-box">
+        <div class="bar-bg"><div class="bar-fill" id="uiHp"></div></div>
     </div>
+
+    <button class="action-btn" id="attackBtn">⚔️</button>
+    <div class="joystick-zone" id="joystickZone"></div>
+    <div id="webgl-container"></div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
+    // Инициализация Three.js сцены, камеры и рендерера
+    const container = document.getElementById('webgl-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070d);
+    scene.fog = new THREE.FogExp2(0x05070d, 0.035);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Освещение
+    const ambientLight = new THREE.AmbientLight(0x1e293b, 1.2);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.5);
+    dirLight.position.set(15, 25, 15);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    scene.add(dirLight);
+
     // Игровое состояние
-    let gold = parseInt(localStorage.getItem('gm_gold') || '200');
-    let gems = parseInt(localStorage.getItem('gm_gems') || '5');
-    let meat = parseInt(localStorage.getItem('gm_meat') || '10');
-    let iron = parseInt(localStorage.getItem('gm_iron') || '0');
-    let essence = parseInt(localStorage.getItem('gm_essence') || '0');
+    let scoreGold = 0;
+    let playerHp = 100;
+    let playerMaxHp = 100;
+    let playerLvl = 1;
 
-    let tavernLvl = parseInt(localStorage.getItem('gm_t_lvl') || '1');
-    let tavernCost = parseInt(localStorage.getItem('gm_t_cost') || '100');
-    let heroes = JSON.parse(localStorage.getItem('gm_heroes') || '[]');
-    let onMission = false;
+    // Создание пола подземелья (модульная сетка)
+    const floorGeo = new THREE.PlaneGeometry(60, 60);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
 
-    function logMsg(text) {
-        const box = document.getElementById('gameLog');
-        const time = new Date().toLocaleTimeString();
-        box.innerHTML = `[${time}] ${text}<br>` + box.innerHTML;
+    // Создание игрока (Low-Poly рыцарь/персонаж)
+    const playerGroup = new THREE.Group();
+    
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x6366f1, roughness: 0.3 });
+    const bodyGeom = new THREE.BoxGeometry(0.8, 1.2, 0.5);
+    const body = new THREE.Mesh(bodyGeom, bodyMat);
+    body.position.y = 0.6;
+    body.castShadow = true;
+    playerGroup.add(body);
+
+    const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.5 });
+    const headGeom = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const head = new THREE.Mesh(headGeom, headMat);
+    head.position.y = 1.35;
+    head.castShadow = true;
+    playerGroup.add(head);
+
+    scene.add(playerGroup);
+    playerGroup.position.set(0, 0, 0);
+
+    // Камера следует за игроком (изометрический вид)
+    function updateCamera() {
+        camera.position.x = playerGroup.position.x + 8;
+        camera.position.y = playerGroup.position.y + 12;
+        camera.position.z = playerGroup.position.z + 10;
+        camera.lookAt(playerGroup.position.x, playerGroup.position.y + 0.5, playerGroup.position.z);
     }
 
-    function updateUI() {
-        document.getElementById('goldVal').innerText = gold;
-        document.getElementById('gemVal').innerText = gems;
-        document.getElementById('meatVal').innerText = meat;
-        document.getElementById('ironVal').innerText = iron;
-        document.getElementById('essenceVal').innerText = essence;
+    // Генерация процедурных стен и препятствий в подземелье
+    const obstacleGroup = new THREE.Group();
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+    for (let i = 0; i < 20; i++) {
+        let wGeom = new THREE.BoxGeometry(2, 2, 2);
+        let wall = new THREE.Mesh(wGeom, wallMat);
+        wall.position.set((Math.random() - 0.5) * 40, 1, (Math.random() - 0.5) * 40);
+        wall.castShadow = true;
+        wall.receiveShadow = true;
+        obstacleGroup.add(wall);
+    }
+    scene.add(obstacleGroup);
 
-        document.getElementById('tavernLvl').innerText = tavernLvl;
-        document.getElementById('tavernIncome').innerText = tavernLvl * 2;
-        document.getElementById('tavernCost').innerText = tavernCost;
+    // Враги (Монстры подземелья)
+    let enemies = [];
+    const enemyGeom = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+    const enemyMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
 
-        renderHeroes();
-        saveGame();
+    function spawnEnemy() {
+        let enemy = new THREE.Mesh(enemyGeom, enemyMat);
+        let angle = Math.random() * Math.PI * 2;
+        let dist = 15 + Math.random() * 15;
+        enemy.position.set(playerGroup.position.x + Math.cos(angle) * dist, 0.45, playerGroup.position.z + Math.sin(angle) * dist);
+        enemy.castShadow = true;
+        scene.add(enemy);
+        enemies.push({ mesh: enemy, hp: 50, speed: 0.04 });
     }
 
-    function switchTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active');
-        btn.classList.add('active');
-    }
+    for (let i = 0; i < 6; i++) spawnEnemy();
 
-    function upgradeTavern() {
-        if (gold >= tavernCost) {
-            gold -= tavernCost;
-            tavernLvl++;
-            tavernCost = Math.floor(tavernCost * 1.6);
-            logMsg(`Таверна улучшена до уровня ${tavernLvl}!`);
-            updateUI();
-        } else {
-            alert('Недостаточно золота!');
+    // Управление тач-джойстиком
+    let moveDir = { x: 0, z: 0 };
+    let isDragging = false;
+    let startPos = { x: 0, y: 0 };
+
+    const zone = document.getElementById('joystickZone');
+    zone.addEventListener('touchstart', e => {
+        isDragging = true;
+        startPos.x = e.touches[0].clientX;
+        startPos.y = e.touches[0].clientY;
+    });
+    zone.addEventListener('touchmove', e => {
+        if (!isDragging) return;
+        let dx = e.touches[0].clientX - startPos.x;
+        let dz = e.touches[0].clientY - startPos.y;
+        let len = Math.hypot(dx, dz);
+        if (len > 0) {
+            moveDir.x = (dx / len) * 0.08;
+            moveDir.z = (dz / len) * 0.08;
         }
-    }
+    });
+    zone.addEventListener('touchend', () => {
+        isDragging = false;
+        moveDir.x = 0;
+        moveDir.z = 0;
+    });
 
-    function hireHero() {
-        if (gold >= 300) {
-            gold -= 300;
-            const names = ['Арагорн', 'Лира', 'Торвальд', 'Венди', 'Гром', 'Эльза'];
-            const classes = ['Воин', 'Маг', 'Разбойник', 'Паладин'];
-            let name = names[Math.floor(Math.random() * names.length)];
-            let cls = classes[Math.floor(Math.random() * classes.length)];
-            
-            heroes.push({ name: `${name} (${cls})`, level: 1, power: 10 });
-            logMsg(`В гильдию вступил новый герой: ${name} (${cls})!`);
-            updateUI();
-        } else {
-            alert('Нужно 300 золота для найма!');
-        }
-    }
+    // Десктопное управление клавиатурой (WASD)
+    let keys = {};
+    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-    function renderHeroes() {
-        let html = '';
-        if (heroes.length === 0) {
-            html = '<div class="card" style="text-align:center; color:var(--hint); font-size:13px;">У вас пока нет героев. Нанимайте их во вкладке выше!</div>';
-        } else {
-            heroes.forEach((h, i) => {
-                html += `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
-                    <div>
-                        <div style="font-weight:bold; font-size:13px;">🛡️ ${h.name}</div>
-                        <div style="font-size:11px; color:var(--hint);">Уровень: ${h.level} | Сила: ${h.power}</div>
-                    </div>
-                    <button class="btn" style="width:auto; padding:6px 10px; font-size:11px;" onclick="upgradeHero(${i})">Качать (50🪙)</button>
-                </div>`;
-            });
-        }
-        document.getElementById('heroList').innerHTML = html;
-    }
-
-    function upgradeHero(i) {
-        if (gold >= 50) {
-            gold -= 50;
-            heroes[i].level++;
-            heroes[i].power += 5;
-            logMsg(`Герой ${heroes[i].name} повышен до уровня ${heroes[i].level}!`);
-            updateUI();
-        } else {
-            alert('Недостаточно золота!');
-        }
-    }
-
-    function startExpedition() {
-        if (heroes.length === 0) {
-            alert('Сначала наймите хотя бы одного героя!');
-            return;
-        }
-        if (onMission) return;
-
-        onMission = true;
-        const btn = document.getElementById('dungeonBtn');
-        const status = document.getElementById('expeditionStatus');
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-        
-        let seconds = 10;
-        status.innerText = `Статус: Герои в подземелье (${seconds}с)...`;
-
-        let interval = setInterval(() => {
-            seconds--;
-            if (seconds > 0) {
-                status.innerText = `Статус: Герои в подземелье (${seconds}с)...`;
-            } else {
-                clearInterval(interval);
-                onMission = false;
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                status.innerText = 'Статус: Свободны';
-
-                // Награды
-                let foundGold = 120 + Math.floor(Math.random() * 80);
-                let foundIron = 2 + Math.floor(Math.random() * 3);
-                gold += foundGold;
-                iron += foundIron;
-                logMsg(`Экспедиция успешна! Найдено: +${foundGold} золота, +${foundIron} железа.`);
-                updateUI();
+    // Атака по кнопке
+    document.getElementById('attackBtn').addEventListener('click', () => {
+        // Проверяем врагов в радиусе атаки
+        enemies.forEach((en, index) => {
+            let dist = playerGroup.position.distanceTo(en.mesh.position);
+            if (dist < 3.5) {
+                en.hp -= 25;
+                // Эффект отскока при ударе
+                en.mesh.position.x += (en.mesh.position.x - playerGroup.position.x) * 0.5;
+                en.mesh.position.z += (en.mesh.position.z - playerGroup.position.z) * 0.5;
+                if (en.hp <= 0) {
+                    scene.remove(en.mesh);
+                    enemies.splice(index, 1);
+                    scoreGold += 25;
+                    setTimeout(spawnEnemy, 2000);
+                }
             }
-        }, 1000);
-    }
+        });
+    });
 
-    function craftItem() {
-        if (iron >= 5) {
-            iron -= 5;
-            essence += 1;
-            logMsg('Вы успешно высковали Рунический Меч! Получена +1 эссенция.');
-            updateUI();
-        } else {
-            alert('Нужно как минимум 5 единиц железа из подземелий!');
+    // Основной игровой цикл (60 FPS)
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Расчет движения с учетом клавиатуры или джойстика
+        let vx = moveDir.x;
+        let vz = moveDir.z;
+        if (keys['w'] || keys['arrowup']) vz = -0.08;
+        if (keys['s'] || keys['arrowdown']) vz = 0.08;
+        if (keys['a'] || keys['arrowleft']) vx = -0.08;
+        if (keys['d'] || keys['arrowright']) vx = 0.08;
+
+        if (vx !== 0 || vz !== 0) {
+            playerGroup.position.x += vx * 1.2;
+            playerGroup.position.z += vz * 1.2;
+            playerGroup.rotation.y = Math.atan2(vx, vz);
         }
+
+        // Интеллект врагов (преследование игрока)
+        enemies.forEach(en => {
+            let dir = new THREE.Vector3().subVectors(playerGroup.position, en.mesh.position);
+            let dist = dir.length();
+            if (dist > 1.2) {
+                dir.normalize();
+                en.mesh.position.addScaledVector(dir, en.speed);
+            } else {
+                playerHp -= 0.15;
+                if (playerHp <= 0) {
+                    alert('Ваш герой пал в подземелье! Возрождение...');
+                    playerHp = 100;
+                    playerGroup.position.set(0, 0, 0);
+                }
+            }
+        });
+
+        updateCamera();
+
+        // Обновление HTML интерфейса
+        document.getElementById('uiGold').innerText = scoreGold;
+        document.getElementById('uiLvl').innerText = playerLvl;
+        document.getElementById('uiHp').style.width = Math.max(0, (playerHp / playerMaxHp) * 100) + '%';
+
+        renderer.render(scene, camera);
     }
 
-    // Пассивный доход таверны каждую секунду
-    setInterval(() => {
-        gold += tavernLvl * 2;
-        updateUI();
-    }, 1000);
+    // Ресайз окна
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
-    function saveGame() {
-        localStorage.setItem('gm_gold', gold);
-        localStorage.setItem('gm_gems', gems);
-        localStorage.setItem('gm_meat', meat);
-        localStorage.setItem('gm_iron', iron);
-        localStorage.setItem('gm_essence', essence);
-        localStorage.setItem('gm_t_lvl', tavernLvl);
-        localStorage.setItem('gm_t_cost', tavernCost);
-        localStorage.setItem('gm_heroes', JSON.stringify(heroes));
-    }
-
-    updateUI();
+    animate();
 </script>
 </body>
 </html>
