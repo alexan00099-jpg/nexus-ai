@@ -7,12 +7,12 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: var(--tg-theme-bg-color, #0f1219);
-            --text: var(--tg-theme-text-color, #f1f5f9);
-            --card: var(--tg-theme-secondary-bg-color, #1a1f2c);
-            --accent: var(--tg-theme-button-color, #f59e0b);
-            --accent-text: var(--tg-theme-button-text-color, #000000);
-            --hint: var(--tg-theme-hint-color, #64748b);
+            --bg: #0f1219;
+            --text: #f1f5f9;
+            --card: #1a1f2c;
+            --accent: #f59e0b;
+            --accent-text: #000000;
+            --hint: #64748b;
             --border: rgba(255, 255, 255, 0.08);
             --gold: #f59e0b;
             --mana: #3b82f6;
@@ -20,12 +20,11 @@
             --success: #22c55e;
             --danger: #ef4444;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; user-select: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; outline: none; }
         body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 
         .container { padding: 16px; max-width: 600px; margin: 0 auto; }
 
-        /* Верхняя панель ресурсов */
         .resources-bar {
             background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
             border: 1px solid rgba(245, 158, 11, 0.3);
@@ -37,7 +36,6 @@
         .res-title { font-size: 10px; color: var(--hint); text-transform: uppercase; margin-bottom: 2px; }
         .res-val { font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 4px; }
 
-        /* Навигация по модулям (Скролл) */
         .modules-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
         .modules-scroll::-webkit-scrollbar { display: none; }
         .chip {
@@ -47,12 +45,10 @@
         }
         .chip.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 
-        /* Секции модулей */
         .game-module { display: none; background: var(--card); border-radius: 20px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
         .game-module.active { display: block; }
         .module-header { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Карточки сущностей */
         .entity-card {
             background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
             padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
@@ -64,19 +60,16 @@
 
         .btn-action {
             background: var(--accent); color: var(--accent-text); border: none;
-            padding: 8px 14px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer;
+            padding: 10px 16px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer;
             text-transform: uppercase;
         }
-        .btn-action:active { transform: scale(0.95); }
-        .btn-action:disabled { background: var(--hint); opacity: 0.5; cursor: not-allowed; }
+        .btn-action:active { transform: scale(0.95); opacity: 0.8; }
 
-        /* Шахты и постройки */
         .mine-card { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
         .mine-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .progress-bar { width: 100%; height: 6px; background: #2a3447; border-radius: 3px; overflow: hidden; margin-top: 8px; }
-        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
+        .progress-fill { height: 100%; background: var(--success); width: 65%; }
 
-        /* Нижняя навигация */
         .nav-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--card); display: flex; justify-content: space-around;
@@ -94,7 +87,6 @@
 <body>
 
     <div class="container">
-        <!-- Панель ресурсов -->
         <div class="resources-bar">
             <div class="res-item">
                 <div class="res-title">Золото</div>
@@ -110,7 +102,6 @@
             </div>
         </div>
 
-        <!-- Навигация модулей (Скролл) -->
         <div class="modules-scroll">
             <button class="chip active" onclick="switchModule('castle', this)">🏰 Замок и Шахты</button>
             <button class="chip" onclick="switchModule('heroes', this)">⚔️ Герои</button>
@@ -121,7 +112,6 @@
             <button class="chip" onclick="switchModule('guild', this)">🛡️ Клан</button>
         </div>
 
-        <!-- МОДУЛЬ 1: ЗАМОК И ШАХТЫ -->
         <div id="mod-castle" class="game-module active">
             <div class="module-header"><span>Экономика империи</span><span style="font-size:12px; color:var(--hint);">Уровень замка: 4</span></div>
             
@@ -133,7 +123,7 @@
                     </div>
                     <button class="btn-action" onclick="collectMine('gold')">Собрать</button>
                 </div>
-                <div class="progress-bar"><div class="progress-fill" id="goldProgress" style="width: 65%;"></div></div>
+                <div class="progress-bar"><div class="progress-fill"></div></div>
             </div>
 
             <div class="mine-card">
@@ -144,111 +134,81 @@
                     </div>
                     <button class="btn-action" onclick="collectMine('mana')">Собрать</button>
                 </div>
-                <div class="progress-bar"><div class="progress-fill" id="manaProgress" style="width: 40%;"></div></div>
+                <div class="progress-bar"><div class="progress-fill"></div></div>
             </div>
         </div>
 
-        <!-- МОДУЛЬ 2: ГЕРОИ -->
         <div id="mod-heroes" class="game-module">
             <div class="module-header"><span>Отряд героев</span><span>⚔️ Сила: 4,850</span></div>
-            <div id="heroesList">
-                <!-- Динамически заполнится -->
-            </div>
+            <div id="heroesList"></div>
         </div>
 
-        <!-- МОДУЛЬ 3: ЭКСПЕДИЦИИ -->
         <div id="mod-expedition" class="game-module">
             <div class="module-header"><span>Подземелья и рейды</span></div>
             <div class="entity-card">
                 <div class="entity-info">
                     <div class="entity-avatar">🐉</div>
                     <div>
-                        <div class="entity-name">Логово Дракона (Элитное)</div>
-                        <div class="entity-desc">Награда: 500 Золота, 50 Кристаллов. Время: 3 мин.</div>
+                        <div class="entity-name">Логово Дракона</div>
+                        <div class="entity-desc">Награда: 500 Золота. Время: 3 мин.</div>
                     </div>
                 </div>
                 <button class="btn-action" onclick="startExpedition(3, 'Дракон')">В бой</button>
             </div>
-            <div class="entity-card">
-                <div class="entity-info">
-                    <div class="entity-avatar">💀</div>
-                    <div>
-                        <div class="entity-name">Проклятые катакомбы</div>
-                        <div class="entity-desc">Награда: 200 Золота, Редкий артефакт. Время: 1 мин.</div>
-                    </div>
-                </div>
-                <button class="btn-action" onclick="startExpedition(1, 'Катакомбы')">В бой</button>
-            </div>
         </div>
 
-        <!-- МОДУЛЬ 4: АРЕНА -->
         <div id="mod-arena" class="game-module">
             <div class="module-header"><span>Рейтинг игроков</span><span>Трофеи: 1,420 🏆</span></div>
             <div class="entity-card">
                 <div class="entity-info">
                     <div class="entity-avatar">🛡️</div>
                     <div>
-                        <div class="entity-name">ShadowLord (Сила: 4,200)</div>
-                        <div class="entity-desc">Ранг #14 в лиге гладиаторов</div>
+                        <div class="entity-name">ShadowLord</div>
+                        <div class="entity-desc">Ранг #14 в лиге</div>
                     </div>
                 </div>
                 <button class="btn-action" onclick="fightArena('ShadowLord')">Атаковать</button>
             </div>
-            <div class="entity-card">
-                <div class="entity-info">
-                    <div class="entity-avatar">🗡️</div>
-                    <div>
-                        <div class="entity-name">Valkyrie_X (Сила: 4,650)</div>
-                        <div class="entity-desc">Ранг #12 в лиге гладиаторов</div>
-                    </div>
-                </div>
-                <button class="btn-action" onclick="fightArena('Valkyrie_X')">Атаковать</button>
-            </div>
         </div>
 
-        <!-- МОДУЛЬ 5: КУЗНИЦА (КРАФТ) -->
         <div id="mod-craft" class="game-module">
             <div class="module-header"><span>Создание экипировки</span></div>
             <div class="entity-card">
                 <div class="entity-info">
                     <div class="entity-avatar">⚔️</div>
                     <div>
-                        <div class="entity-name">Меч Ярости (+500 к атаке)</div>
-                        <div class="entity-desc">Цена: 1,000 Золота + 200 Маны</div>
+                        <div class="entity-name">Меч Ярости</div>
+                        <div class="entity-desc">Цена: 1,000 Золота</div>
                     </div>
                 </div>
                 <button class="btn-action" onclick="craftItem('Меч Ярости', 1000, 200)">Скрафтить</button>
             </div>
         </div>
 
-        <!-- МОДУЛЬ 6: АУКЦИОН -->
         <div id="mod-market" class="game-module">
             <div class="module-header"><span>Рынок игроков</span></div>
             <div class="entity-card">
                 <div class="entity-info">
                     <div class="entity-avatar">💎</div>
                     <div>
-                        <div class="entity-name">Эссенция дракона (x5)</div>
-                        <div class="entity-desc">Продавец: Arthur_King | Цена: 450 Кристаллов</div>
+                        <div class="entity-name">Эссенция дракона</div>
+                        <div class="entity-desc">Цена: 450 Кристаллов</div>
                     </div>
                 </div>
                 <button class="btn-action" onclick="alert('Лот успешно выкуплен!')">Купить</button>
             </div>
         </div>
 
-        <!-- МОДУЛЬ 7: КЛАН -->
         <div id="mod-guild" class="game-module">
-            <div class="module-header"><span>Гильдия «Valhalla»</span><span>Уровень: 8 👑</span></div>
+            <div class="module-header"><span>Гильдия «Valhalla»</span></div>
             <div style="font-size: 13px; color: var(--hint); line-height: 1.5;">
                 <p>👥 Участников: 28 / 30</p>
-                <p>💰 Казна клана: 45,200 золота</p>
-                <p>⚡ Бонусы: +15% к добыче ресурсов, +10% к силе героев</p>
-                <button class="btn-action" style="margin-top: 14px; width: 100%;" onclick="alert('Взнос в казну отправлен!')">Внести вклад в казну</button>
+                <p>💰 Казна: 45,200 золота</p>
+                <button class="btn-action" style="margin-top: 14px; width: 100%;" onclick="alert('Взнос отправлен!')">Внести вклад</button>
             </div>
         </div>
     </div>
 
-    <!-- Нижняя навигация -->
     <div class="nav-bar">
         <button class="nav-item active" onclick="switchTab('game', this)"><span>🏰</span>Империя</button>
         <button class="nav-item" onclick="switchTab('quests', this)"><span>📜</span>Квесты</button>
@@ -257,7 +217,7 @@
 
 <script>
     const tg = window.Telegram.WebApp;
-    tg.expand();
+    try { tg.expand(); } catch(e) {}
 
     let gold = 2450;
     let mana = 820;
@@ -306,7 +266,7 @@
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         btn.classList.add('active');
         if (tabId === 'quests') alert('Активные квесты: Победить 5 боссов (3/5)');
-        if (tabId === 'profile') alert('Профиль игрока: ID #89421, Статус: Владелец земель.');
+        if (tabId === 'profile') alert('Профиль игрока: ID #89421');
     }
 
     function collectMine(type) {
@@ -322,39 +282,32 @@
 
     function upgradeHero(name) {
         if (gold < 500) {
-            alert('Недостаточно золота для прокачки героя (нужно 500)!');
+            alert('Недостаточно золота (нужно 500)!');
             return;
         }
         gold -= 500;
         updateResources();
-        alert(`Герой ${name} успешно прокачан!`);
+        alert(`Герой ${name} прокачан!`);
     }
 
     function startExpedition(minutes, name) {
-        alert(`Экспедиция в локацию "${name}" началась! Отряд вернется через ${minutes} мин.`);
+        alert(`Экспедиция в локацию "${name}" началась!`);
     }
 
     function fightArena(rival) {
-        let win = Math.random() > 0.3;
-        if (win) {
-            gold += 400;
-            gems += 15;
-            alert(`🎉 Победа над ${rival}! Получено: 400 золота, 15 кристаллов.`);
-        } else {
-            alert(`💥 Поражение от ${rival}. Усильте отряд в кузнице.`);
-        }
+        gold += 400;
         updateResources();
+        alert(`Победа над ${rival}! Получено 400 золота.`);
     }
 
     function craftItem(item, costGold, costMana) {
-        if (gold < costGold || mana < costMana) {
-            alert('Недостаточно ресурсов для крафта!');
+        if (gold < costGold) {
+            alert('Недостаточно золота!');
             return;
         }
         gold -= costGold;
-        mana -= costMana;
         updateResources();
-        alert(`🎉 Предмет "${item" успешно создан и добавлен в инвентарь!`);
+        alert(`Предмет "${item}" успешно создан!`);
     }
 
     renderHeroes();
