@@ -3,108 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lucky Star Social Casino</title>
+    <title>DeFiPulse Super-App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: var(--tg-theme-bg-color, #0b0f19);
+            --bg: var(--tg-theme-bg-color, #070b14);
             --text: var(--tg-theme-text-color, #f8fafc);
-            --card: var(--tg-theme-secondary-bg-color, #131b2e);
-            --accent: var(--tg-theme-button-color, #f59e0b);
+            --card: var(--tg-theme-secondary-bg-color, #0f172a);
+            --accent: var(--tg-theme-button-color, #10b981);
             --accent-text: var(--tg-theme-button-text-color, #000000);
             --hint: var(--tg-theme-hint-color, #64748b);
-            --border: rgba(255, 255, 255, 0.08);
-            --gold: #f59e0b;
-            --purple: #8b5cf6;
-            --success: #22c55e;
+            --border: rgba(255, 255, 255, 0.06);
+            --success: #10b981;
             --danger: #ef4444;
+            --purple: #8b5cf6;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; user-select: none; }
         body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 
         .container { padding: 16px; max-width: 600px; margin: 0 auto; }
 
-        /* Шапка с балансом */
-        .balance-card {
-            background: linear-gradient(135deg, #1e1b4b 0%, #31103f 100%);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: 20px; padding: 16px; margin-bottom: 16px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
+        /* Шапка кошелька */
+        .wallet-card {
+            background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px; padding: 20px; margin-bottom: 16px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15);
         }
-        .balance-info h2 { font-size: 13px; color: var(--hint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .balance-amount { font-size: 24px; font-weight: 800; color: var(--gold); display: flex; align-items: center; gap: 6px; }
-        .add-coins-btn {
-            background: var(--gold); color: #000; border: none; padding: 10px 16px;
-            border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        .wallet-title { font-size: 12px; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .wallet-balance { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 14px; }
+        .wallet-actions { display: flex; gap: 10px; }
+        .wallet-btn {
+            flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff; padding: 10px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer;
+            text-align: center; backdrop-filter: blur(4px);
         }
+        .wallet-btn.primary { background: var(--success); color: #000; border: none; }
 
-        /* Навигация по играм (Чипсы) */
-        .games-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
-        .games-scroll::-webkit-scrollbar { display: none; }
+        /* Навигация по модулям (Скролл) */
+        .modules-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
+        .modules-scroll::-webkit-scrollbar { display: none; }
         .chip {
             background: var(--card); border: 1px solid var(--border); color: var(--hint);
-            padding: 10px 16px; border-radius: 14px; font-size: 13px; white-space: nowrap; cursor: pointer; font-weight: 600;
+            padding: 10px 14px; border-radius: 14px; font-size: 13px; white-space: nowrap; cursor: pointer; font-weight: 600;
             display: flex; align-items: center; gap: 6px;
         }
         .chip.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 
-        /* Каркас игровых залов */
-        .game-screen { display: none; background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; text-align: center; }
-        .game-screen.active { display: block; }
+        /* Секции модулей */
+        .module-section { display: none; background: var(--card); border-radius: 20px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
+        .module-section.active { display: block; }
+        .section-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
 
-        .game-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-        .game-desc { font-size: 12px; color: var(--hint); margin-bottom: 20px; }
-
-        /* Управление ставкой */
-        .bet-control { display: flex; justify-content: space-between; align-items: center; background: var(--bg); padding: 8px 14px; border-radius: 14px; margin-bottom: 16px; border: 1px solid var(--border); }
-        .bet-label { font-size: 12px; color: var(--hint); text-align: left; }
-        .bet-input-group { display: flex; align-items: center; gap: 8px; }
-        .bet-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 30px; height: 30px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-        .bet-value { font-size: 15px; font-weight: 700; min-width: 40px; text-align: center; }
-
-        /* 1. СЛОТЫ */
-        .slots-window { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .slot-reel {
-            background: var(--bg); border: 2px solid var(--border); width: 70px; height: 90px;
-            border-radius: 14px; font-size: 36px; display: flex; align-items: center; justify-content: center;
-            box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
+        /* Элементы списков (Токены, Стейкинг, Пул) */
+        .crypto-item {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+            padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
         }
+        .crypto-info { display: flex; align-items: center; gap: 10px; }
+        .crypto-icon { width: 36px; height: 36px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; }
+        .crypto-name { font-size: 14px; font-weight: 700; }
+        .crypto-desc { font-size: 11px; color: var(--hint); }
+        .crypto-price { text-align: right; }
+        .crypto-val { font-size: 14px; font-weight: 700; }
+        .crypto-change { font-size: 11px; color: var(--success); }
 
-        /* 2. КРАШ РАКЕТА */
-        .crash-area {
-            background: var(--bg); height: 160px; border-radius: 14px; border: 1px solid var(--border);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; margin-bottom: 16px; overflow: hidden;
-        }
-        .crash-multiplier { font-size: 40px; font-weight: 900; color: var(--success); }
-        .crash-rocket { font-size: 28px; transition: transform 0.2s; }
+        /* Формы и обмены */
+        .swap-box { background: var(--bg); border-radius: 14px; padding: 14px; border: 1px solid var(--border); margin-bottom: 10px; }
+        .swap-label { font-size: 11px; color: var(--hint); margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .swap-input-row { display: flex; justify-content: space-between; align-items: center; }
+        .swap-input { background: none; border: none; color: var(--text); font-size: 18px; font-weight: 700; width: 60%; outline: none; }
+        .token-select { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
-        /* 3. КОЛЕСО ФОРТУНЫ */
-        .wheel-container { position: relative; width: 200px; height: 200px; margin: 0 auto 20px auto; }
-        .wheel {
-            width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--gold);
-            background: conic-gradient(#8b5cf6 0deg 60deg, #3b82f6 60deg 120deg, #ec4899 120deg 180deg, #f59e0b 180deg 240deg, #10b981 240deg 300deg, #6366f1 300deg 360deg);
-            transition: transform 4s cubic-bezier(0.15, 0.9, 0.2, 1);
-            display: flex; align-items: center; justify-content: center;
+        .btn {
+            background: var(--accent); color: var(--accent-text); border: none;
+            padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; width: 100%;
+            cursor: pointer; text-align: center; text-transform: uppercase; margin-top: 10px;
         }
-        .wheel-pointer {
-            position: absolute; top: -10px; left: calc(50% - 10px); width: 0; height: 0;
-            border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 20px solid var(--text);
-            z-index: 10;
-        }
+        .btn:active { transform: scale(0.98); }
 
-        /* Универсальная кнопка */
-        .action-btn {
-            background: linear-gradient(135deg, var(--gold) 0%, #d97706 100%);
-            color: #000; border: none; padding: 14px; border-radius: 14px;
-            font-weight: 800; font-size: 15px; width: 100%; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .action-btn:active { transform: scale(0.98); }
-        .action-btn:disabled { background: var(--hint); opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-
-        /* Навигация внизу */
+        /* Нижняя навигация */
         .nav-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--card); display: flex; justify-content: space-around;
@@ -115,387 +93,227 @@
             background: none; border: none; color: var(--hint);
             font-size: 11px; cursor: pointer; text-align: center; flex: 1; font-weight: 500;
         }
-        .nav-item.active { color: var(--gold); font-weight: 700; }
+        .nav-item.active { color: var(--accent); font-weight: 700; }
         .nav-item span { display: block; font-size: 20px; margin-bottom: 2px; }
-
-        /* Вкладки */
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* Таблица лидеров и магазин */
-        .leaderboard-item, .shop-item {
-            background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
-            padding: 12px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
-        }
-        .shop-item-info h4 { font-size: 14px; margin-bottom: 2px; font-weight: 700; }
-        .shop-item-info p { font-size: 11px; color: var(--hint); }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- Шапка с балансом -->
-        <div class="balance-card">
-            <div class="balance-info">
-                <h2>Ваш баланс</h2>
-                <div class="balance-amount" id="balanceDisplay">🪙 1,500</div>
+        <!-- Шапка кошелька -->
+        <div class="wallet-card">
+            <div class="wallet-title">Общий баланс портфеля</div>
+            <div class="wallet-balance" id="totalPortfolioVal">$12,450.80</div>
+            <div class="wallet-actions">
+                <button class="wallet-btn primary" onclick="openReceiveModal()">📥 Пополнить</button>
+                <button class="wallet-btn" onclick="openSendModal()">📤 Отправить</button>
+                <button class="wallet-btn" onclick="openHistoryModal()">📋 История</button>
             </div>
-            <button class="add-coins-btn" onclick="switchTab('shop', document.querySelectorAll('.nav-item')[3])">+ Банк</button>
         </div>
 
-        <!-- ВКЛАДКА 1: ИГРЫ -->
-        <div id="tab-games" class="tab-content active">
-            <div class="games-scroll">
-                <button class="chip active" onclick="switchGame('slots', this)">🎰 Слоты</button>
-                <button class="chip" onclick="switchGame('crash', this)">🚀 Краш Ракета</button>
-                <button class="chip" onclick="switchGame('wheel', this)">🎡 Колесо</button>
-            </div>
+        <!-- Навигация модулей (Чипсы) -->
+        <div class="modules-scroll">
+            <button class="chip active" onclick="switchModule('portfolio', this)">💼 Портфель</button>
+            <button class="chip" onclick="switchModule('swap', this)">⚡ DEX Обмен</button>
+            <button class="chip" onclick="switchModule('staking', this)">🔒 Стейкинг</button>
+            <button class="chip" onclick="switchModule('launchpad', this)">🚀 Лаунчпад</button>
+            <button class="chip" onclick="switchModule('p2p', this)">🤝 P2P Рынок</button>
+            <button class="chip" onclick="switchModule('analytics', this)">📈 Аналитика</button>
+        </div>
 
-            <!-- СЛОТЫ -->
-            <div id="game-slots" class="game-screen active">
-                <div class="game-title">Lucky 777 Slots</div>
-                <div class="game-desc">Соберите 3 одинаковых символа для джекпота!</div>
-                
-                <div class="bet-control">
+        <!-- МОДУЛЬ 1: ПОРТФЕЛЬ -->
+        <div id="mod-portfolio" class="module-section active">
+            <div class="section-title"><span>Активы в сети TON / EVM</span><span style="font-size: 12px; color: var(--success);">+4.8% за 24ч</span></div>
+            <div id="assetsList">
+                <!-- Динамически заполнится -->
+            </div>
+        </div>
+
+        <!-- МОДУЛЬ 2: DEX ОБМЕННИК -->
+        <div id="mod-swap" class="module-section">
+            <div class="section-title">Быстрый обмен токенов</div>
+            <div class="swap-box">
+                <div class="swap-label"><span>Вы отдаете</span><span>Баланс: 45.2 TON</span></div>
+                <div class="swap-input-row">
+                    <input type="number" class="swap-input" id="fromAmount" value="5.0" placeholder="0.0">
+                    <select class="token-select"><option>TON</option><option>USDT</option><option>BTC</option></select>
+                </div>
+            </div>
+            <div style="text-align: center; margin: -6px 0; font-size: 16px; color: var(--hint);">🔄</div>
+            <div class="swap-box">
+                <div class="swap-label"><span>Вы получаете (примерно)</span><span>Баланс: 280.50 USDT</span></div>
+                <div class="swap-input-row">
+                    <input type="text" class="swap-input" id="toAmount" value="31.25" readonly>
+                    <select class="token-select"><option>USDT</option><option>TON</option><option>ETH</option></select>
+                </div>
+            </div>
+            <button class="btn" onclick="executeSwap()">Совершить обмен</button>
+        </div>
+
+        <!-- МОДУЛЬ 3: СТЕЙКИНГ -->
+        <div id="mod-staking" class="module-section">
+            <div class="section-title">Пассивный доход (APY)</div>
+            <div class="crypto-item">
+                <div class="crypto-info">
+                    <div class="crypto-icon" style="background:#0284c7; color:#fff;">T</div>
                     <div>
-                        <div class="bet-label">Ставка</div>
-                        <div style="font-size:11px; color:var(--hint);">Мин: 10</div>
-                    </div>
-                    <div class="bet-input-group">
-                        <button class="bet-btn" onclick="adjustBet(-50)">-</button>
-                        <div class="bet-value" id="slotsBet">50</div>
-                        <button class="bet-btn" onclick="adjustBet(50)">+</button>
+                        <div class="crypto-name">TON Liquid Staking</div>
+                        <div class="crypto-desc">Доходность: 14.5% годовых</div>
                     </div>
                 </div>
-
-                <div class="slots-window">
-                    <div class="slot-reel" id="reel1">🍒</div>
-                    <div class="slot-reel" id="reel2">🍋</div>
-                    <div class="slot-reel" id="reel3">💎</div>
-                </div>
-
-                <button class="action-btn" onclick="playSlots()">Крутить слоты</button>
+                <button class="wallet-btn primary" style="padding: 6px 12px; font-size: 12px;" onclick="stakeToken('TON', 14.5)">Стейкать</button>
             </div>
-
-            <!-- КРАШ РАКЕТА -->
-            <div id="game-crash" class="game-screen">
-                <div class="game-title">Space Crash</div>
-                <div class="game-desc">Заберите выигрыш до того, как ракета улетит!</div>
-
-                <div class="bet-control">
+            <div class="crypto-item">
+                <div class="crypto-info">
+                    <div class="crypto-icon" style="background:#16a34a; color:#fff;">U</div>
                     <div>
-                        <div class="bet-label">Ставка</div>
-                    </div>
-                    <div class="bet-input-group">
-                        <button class="bet-btn" onclick="adjustCrashBet(-50)">-</button>
-                        <div class="bet-value" id="crashBet">100</div>
-                        <button class="bet-btn" onclick="adjustCrashBet(50)">+</button>
+                        <div class="crypto-name">USDT High-Yield Pool</div>
+                        <div class="crypto-desc">Доходность: 21.0% годовых</div>
                     </div>
                 </div>
-
-                <div class="crash-area">
-                    <div class="crash-rocket" id="rocketIcon">🚀</div>
-                    <div class="crash-multiplier" id="crashMultiplier">1.00x</div>
-                </div>
-
-                <button class="action-btn" id="crashActionBtn" onclick="startCrashGame()">Запустить ракету</button>
-            </div>
-
-            <!-- КОЛЕСО ФОРТУНЫ -->
-            <div id="game-wheel" class="game-screen">
-                <div class="game-title">Колесо Фортуны</div>
-                <div class="game-desc">Испытайте удачу и выиграйте до x10 к ставке!</div>
-
-                <div class="wheel-container">
-                    <div class="wheel-pointer"></div>
-                    <div class="wheel" id="fortuneWheel"></div>
-                </div>
-
-                <button class="action-btn" id="wheelBtn" onclick="spinWheel()">Крутить колесо (🪙 100)</button>
+                <button class="wallet-btn primary" style="padding: 6px 12px; font-size: 12px;" onclick="stakeToken('USDT', 21.0)">Стейкать</button>
             </div>
         </div>
 
-        <!-- ВКЛАДКА 2: ЕЖЕДНЕВНЫЙ БОНУС -->
-        <div id="tab-bonus" class="tab-content">
-            <div style="background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid var(--border); text-align: center;">
-                <div style="font-size: 32px; margin-bottom: 10px;">🎁</div>
-                <h2 style="font-size: 18px; margin-bottom: 6px;">Ежедневный бонус</h2>
-                <p style="font-size: 13px; color: var(--hint); margin-bottom: 20px;">Заходите каждый день, чтобы получать бесплатные монеты для игры.</p>
-                
-                <div style="background: var(--bg); border-radius: 14px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border);">
-                    <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px;" id="streakStatus">День 1 из 7</div>
-                    <div style="font-size: 20px; font-weight: 800; color: var(--gold);">🪙 +250 монет</div>
+        <!-- МОДУЛЬ 4: ЛАУНЧПАД -->
+        <div id="mod-launchpad" class="module-section">
+            <div class="section-title">Ранние пресейлы токенов</div>
+            <div class="crypto-item">
+                <div class="crypto-info">
+                    <div class="crypto-icon" style="background:#9333ea; color:#fff;">AI</div>
+                    <div>
+                        <div class="crypto-name">NeuralProtocol ($NEURO)</div>
+                        <div class="crypto-desc">Собрано: $450k / $500k (90%)</div>
+                    </div>
                 </div>
-
-                <button class="action-btn" id="claimBonusBtn" onclick="claimDailyBonus()">Забрать бонус</button>
+                <button class="wallet-btn primary" style="padding: 6px 12px; font-size: 12px;" onclick="participateLaunchpad()">Участвовать</button>
             </div>
         </div>
 
-        <!-- ВКЛАДКА 3: РЕЙТИНГ -->
-        <div id="tab-leaderboard" class="tab-content">
-            <h2 style="font-size: 18px; margin-bottom: 14px;">🏆 Лиги игроков</h2>
-            <div id="leaderboardContainer">
-                <!-- Заполняется динамически -->
+        <!-- МОДУЛЬ 5: P2P РЫНОК -->
+        <div id="mod-p2p" class="module-section">
+            <div class="section-title">P2P Сделки без посредников</div>
+            <div class="crypto-item">
+                <div class="crypto-info">
+                    <div class="crypto-icon">👤</div>
+                    <div>
+                        <div class="crypto-name">CryptoKing_99 (98% сделок)</div>
+                        <div class="crypto-desc">Продает 500 TON за USDT (Лимит: 100-1000)</div>
+                    </div>
+                </div>
+                <button class="wallet-btn" style="padding: 6px 12px; font-size: 12px;" onclick="alert('Ордер принят в работу!')">Купить</button>
             </div>
         </div>
 
-        <!-- ВКЛАДКА 4: МАГАЗИН (МОНЕТИЗАЦИЯ ЧЕРЕЗ TELEGRAM STARS) -->
-        <div id="tab-shop" class="tab-content">
-            <div style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); border-radius: 20px; padding: 20px; color: #fff; margin-bottom: 16px; text-align: center;">
-                <h2 style="font-size: 18px; margin-bottom: 6px;">💎 Банк Lucky Star</h2>
-                <p style="font-size: 12px; opacity: 0.9;">Пополняйте баланс фишек через официальные Telegram Stars.</p>
-            </div>
-
-            <div class="shop-item">
-                <div class="shop-item-info">
-                    <h4>Пакет «Стартовый»</h4>
-                    <p>🪙 1,000 монет</p>
-                </div>
-                <button class="add-coins-btn" onclick="buyCoins(1000, 50)">⭐ 50</button>
-            </div>
-
-            <div class="shop-item">
-                <div class="shop-item-info">
-                    <h4>Пакет «Игрок»</h4>
-                    <p>🪙 5,000 монет + Бонус</p>
-                </div>
-                <button class="add-coins-btn" onclick="buyCoins(5000, 200)">⭐ 200</button>
-            </div>
-
-            <div class="shop-item">
-                <div class="shop-item-info">
-                    <h4>VIP Статус «High Roller»</h4>
-                    <p>🪙 20,000 монет + VIP иконка</p>
-                </div>
-                <button class="add-coins-btn" onclick="buyCoins(20000, 750)">⭐ 750</button>
+        <!-- МОДУЛЬ 6: АНАЛИТИКА -->
+        <div id="mod-analytics" class="module-section">
+            <div class="section-title">Рыночные тренды и газ</div>
+            <div style="font-size: 13px; color: var(--hint); line-height: 1.6;">
+                <p>⛽ Текущая комиссия в сети TON: <strong>0.005 TON</strong></p>
+                <p>📊 Индекс страха и жадности крипто-рынка: <strong>74 (Жадность)</strong></p>
+                <p>💎 Доминирование Биткоина: <strong>54.2%</strong></p>
             </div>
         </div>
     </div>
 
     <!-- Нижняя навигация -->
     <div class="nav-bar">
-        <button class="nav-item active" onclick="switchTab('games', this)"><span>🎰</span>Игры</button>
-        <button class="nav-item" onclick="switchTab('bonus', this)"><span>🎁</span>Бонус</button>
-        <button class="nav-item" onclick="switchTab('leaderboard', this)"><span>🏆</span>Рейтинг</button>
-        <button class="nav-item" onclick="switchTab('shop', this)"><span>💎</span>Магазин</button>
+        <button class="nav-item active" onclick="switchTab('terminal', this)"><span>💳</span>Терминал</button>
+        <button class="nav-item" onclick="switchTab('earn', this)"><span>🎁</span>Earn</button>
+        <button class="nav-item" onclick="switchTab('settings', this)"><span>⚙️</span>Настройки</button>
     </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // Состояние приложения
-    let balance = parseInt(localStorage.getItem('casino_balance') || '1500');
-    let slotsBet = 50;
-    let crashBet = 100;
-    let currentMultiplier = 1.00;
-    let crashInterval = null;
-    let isCrashed = false;
+    const assets = [
+        { icon: '💎', name: 'Toncoin', ticker: 'TON', amount: '45.2 TON', price: '$285.50', change: '+5.4%' },
+        { icon: '💵', name: 'Tether USD', ticker: 'USDT', amount: '8,450.00 USDT', price: '$8,450.00', change: '0.0%' },
+        { icon: '₿', name: 'Bitcoin', ticker: 'BTC', amount: '0.035 BTC', price: '$2,310.30', change: '+2.1%' },
+        { icon: '🟣', name: 'Solana', ticker: 'SOL', amount: '6.4 SOL', price: '$1,405.00', change: '-1.2%' }
+    ];
 
-    updateBalanceDisplay();
-
-    function updateBalanceDisplay() {
-        document.getElementById('balanceDisplay').innerText = `🪙 ${balance.toLocaleString()}`;
-        localStorage.setItem('casino_balance', balance);
-    }
-
-    function switchTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active');
-        btn.classList.add('active');
-        if (tabId === 'leaderboard') renderLeaderboard();
-    }
-
-    function switchGame(gameId, btn) {
-        document.querySelectorAll('.game-screen').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.games-scroll .chip').forEach(el => el.classList.remove('active'));
-        document.getElementById('game-' + gameId).classList.add('active');
-        btn.classList.add('active');
-    }
-
-    // --- ЛОГИКА СЛОТОВ ---
-    function adjustBet(amount) {
-        slotsBet = Math.max(10, slotsBet + amount);
-        document.getElementById('slotsBet').innerText = slotsBet;
-    }
-
-    const symbols = ['🍒', '🍋', '🔔', '💎', '⭐', '7️⃣'];
-
-    function playSlots() {
-        if (balance < slotsBet) {
-            alert('Недостаточно монет на балансе!');
-            return;
-        }
-        balance -= slotsBet;
-        updateBalanceDisplay();
-
-        let r1 = symbols[Math.floor(Math.random() * symbols.length)];
-        let r2 = symbols[Math.floor(Math.random() * symbols.length)];
-        let r3 = symbols[Math.floor(Math.random() * symbols.length)];
-
-        document.getElementById('reel1').innerText = r1;
-        document.getElementById('reel2').innerText = r2;
-        document.getElementById('reel3').innerText = r3;
-
-        if (r1 === r2 && r2 === r3) {
-            let win = slotsBet * 10;
-            balance += win;
-            setTimeout(() => alert(`🎉 ДЖЕКПОТ! Вы выиграли ${win} монет!`), 100);
-        } else if (r1 === r2 || r2 === r3 || r1 === r3) {
-            let win = slotsBet * 2;
-            balance += win;
-            setTimeout(() => alert(`✨ Выигрыш х2: +${win} монет`), 100);
-        }
-        updateBalanceDisplay();
-    }
-
-    // --- ЛОГИКА КРАШ РАКЕТЫ ---
-    function adjustCrashBet(amount) {
-        crashBet = Math.max(50, crashBet + amount);
-        document.getElementById('crashBet').innerText = crashBet;
-    }
-
-    function startCrashGame() {
-        if (balance < crashBet) {
-            alert('Недостаточно монет!');
-            return;
-        }
-        balance -= crashBet;
-        updateBalanceDisplay();
-
-        let btn = document.getElementById('crashActionBtn');
-        btn.innerText = 'ЗАБРАТЬ';
-        btn.style.background = 'var(--success)';
-        btn.onclick = cashOutCrash;
-
-        currentMultiplier = 1.00;
-        isCrashed = false;
-        let crashAt = 1.1 + Math.random() * 3.5; // Рандомный краш от 1.1x до 4.6x
-
-        crashInterval = setInterval(() => {
-            currentMultiplier += 0.04;
-            document.getElementById('crashMultiplier').innerText = currentMultiplier.toFixed(2) + 'x';
-            
-            if (currentMultiplier >= crashAt) {
-                clearInterval(crashInterval);
-                isCrashed = true;
-                document.getElementById('crashMultiplier').innerText = 'CRASHED 💥';
-                document.getElementById('crashMultiplier').style.color = 'var(--danger)';
-                resetCrashButton();
-            }
-        }, 100);
-    }
-
-    function cashOutCrash() {
-        if (isCrashed) return;
-        clearInterval(crashInterval);
-        let win = Math.floor(crashBet * currentMultiplier);
-        balance += win;
-        updateBalanceDisplay();
-        document.getElementById('crashMultiplier').style.color = 'var(--success)';
-        alert(`🏆 Успешно! Вы забрали ${win} монет (${currentMultiplier.toFixed(2)}x)`);
-        resetCrashButton();
-    }
-
-    function resetCrashButton() {
-        let btn = document.getElementById('crashActionBtn');
-        btn.innerText = 'Запустить ракету';
-        btn.style.background = 'linear-gradient(135deg, var(--gold) 0%, #d97706 100%)';
-        btn.onclick = startCrashGame;
-    }
-
-    // --- КОЛЕСО ФОРТУНЫ ---
-    let wheelDeg = 0;
-    function spinWheel() {
-        if (balance < 100) {
-            alert('Недостаточно монет (нужно 100)!');
-            return;
-        }
-        balance -= 100;
-        updateBalanceDisplay();
-
-        let btn = document.getElementById('wheelBtn');
-        btn.disabled = true;
-
-        let randomExtra = Math.floor(Math.random() * 360) + 1440; // Минимум 4 оборота
-        wheelDeg += randomExtra;
-        let wheel = document.getElementById('fortuneWheel');
-        wheel.style.transform = `rotate(${wheelDeg}deg)`;
-
-        setTimeout(() => {
-            let normalizedDeg = wheelDeg % 360;
-            let winMultiplier = 1;
-            if (normalizedDeg < 60) winMultiplier = 2;
-            else if (normalizedDeg < 120) winMultiplier = 0.5;
-            else if (normalizedDeg < 180) winMultiplier = 5;
-            else if (normalizedDeg < 240) winMultiplier = 1;
-            else if (normalizedDeg < 300) winMultiplier = 10;
-            else winMultiplier = 0;
-
-            let prize = 100 * winMultiplier;
-            balance += prize;
-            updateBalanceDisplay();
-            alert(`🎡 Колесо остановилось! Ваш выигрыш: ${prize} монет`);
-            btn.disabled = false;
-        }, 4000);
-    }
-
-    // --- ЕЖЕДНЕВНЫЙ БОНУС ---
-    function claimDailyBonus() {
-        let lastClaim = localStorage.getItem('casino_last_claim');
-        let today = new Date().toDateString();
-
-        if (lastClaim === today) {
-            alert('Вы уже забрали бонус сегодня! Возвращайтесь завтра.');
-            return;
-        }
-
-        balance += 250;
-        updateBalanceDisplay();
-        localStorage.setItem('casino_last_claim', today);
-        alert('🎁 Бонус +250 монет успешно зачислен!');
-    }
-
-    // --- РЕЙТИНГ ---
-    function renderLeaderboard() {
-        let container = document.getElementById('leaderboardContainer');
-        let users = [
-            { name: 'Alex_Crypto', coins: 48900, badge: '👑' },
-            { name: 'LuckyKing', coins: 34200, badge: '🥈' },
-            { name: 'Satoshi_Girl', coins: 21500, badge: '🥉' },
-            { name: 'Вы (Игрок)', coins: balance, badge: '⭐' },
-            { name: 'CryptoTrader', coins: 11400, badge: '' },
-            { name: 'RollerMax', coins: 8900, badge: '' }
-        ];
-
-        users.sort((a, b) => b.coins - a.coins);
-
+    function renderAssets() {
+        let container = document.getElementById('assetsList');
         let html = '';
-        users.forEach((u, index) => {
+        assets.forEach(a => {
             html += `
-                <div class="leaderboard-item">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="font-weight:800; color:var(--gold); width:20px;">#${index + 1}</span>
+                <div class="crypto-item">
+                    <div class="crypto-info">
+                        <div class="crypto-icon">${a.icon}</div>
                         <div>
-                            <div style="font-weight:700; font-size:14px;">${u.badge} ${u.name}</div>
+                            <div class="crypto-name">${a.name} (${a.ticker})</div>
+                            <div class="crypto-desc">${a.amount}</div>
                         </div>
                     </div>
-                    <div style="font-weight:800; color:var(--gold); font-size:13px;">🪙 ${u.coins.toLocaleString()}</div>
+                    <div class="crypto-price">
+                        <div class="crypto-val">${a.price}</div>
+                        <div class="crypto-change">${a.change}</div>
+                    </div>
                 </div>
             `;
         });
         container.innerHTML = html;
     }
 
-    // --- МАГАЗИН STARS ---
-    function buyCoins(coins, stars) {
-        if (confirm(`Приобрести ${coins.toLocaleString()} монет за ${stars} Telegram Stars?`)) {
-            balance += coins;
-            updateBalanceDisplay();
-            alert('🎉 Успешно! Баланс пополнен.');
+    function switchModule(modId, btn) {
+        document.querySelectorAll('.module-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.modules-scroll .chip').forEach(el => el.classList.remove('active'));
+        document.getElementById('mod-' + modId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        btn.classList.add('active');
+        if (tabId === 'earn') {
+            alert('Раздел квестов и Earn-наград находится в разработке.');
+        } else if (tabId === 'settings') {
+            alert('Настройки сети, безопасности и языка.');
         }
     }
+
+    function openReceiveModal() {
+        alert('Ваш адрес кошелька скопирован в буфер обмена: UQDr...49xK');
+    }
+
+    function openSendModal() {
+        let recipient = prompt('Введите адрес получателя (TON / EVM):');
+        if (recipient) {
+            let amount = prompt('Введите сумму перевода:');
+            if (amount) alert(`Успешно отправлено ${amount} на адрес ${recipient}!`);
+        }
+    }
+
+    function openHistoryModal() {
+        alert('Последние транзакции:\n1. Swap 10 TON -> 62.5 USDT (Успешно)\n2. Deposit 1000 USDT (Успешно)');
+    }
+
+    function executeSwap() {
+        let val = document.getElementById('fromAmount').value;
+        if (!val || val <= 0) {
+            alert('Введите корректную сумму для обмена.');
+            return;
+        }
+        alert(`Обмен ${val} TON выполнен успешно! Баланс обновлен.`);
+    }
+
+    function stakeToken(token, apy) {
+        let amount = prompt(`Сколько ${token} вы хотите отправить в стейкинг под ${apy}% годовых?`);
+        if (amount) {
+            alert(`Успешно! ${amount} ${token} заблокированы в пул ликвидности.`);
+        }
+    }
+
+    function participateLaunchpad() {
+        let amount = prompt('Сколько USDT вы хотите инвестировать в пресейл $NEURO?');
+        if (amount) {
+            alert(`Поздравляем! Вы успешно выкупили токены на сумму ${amount} USDT.`);
+        }
+    }
+
+    renderAssets();
 </script>
 </body>
 </html>
