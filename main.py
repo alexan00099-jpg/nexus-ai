@@ -4,7 +4,6 @@ from aiogram import Bot, Dispatcher
 from aiohttp import web
 
 BOT_TOKEN = "8760530404:AAFLyNrH637xnDo68ZevuffMGcBuzpUJACw"
-
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
@@ -19,13 +18,19 @@ async def handle(request):
 async def main():
     app = web.Application()
     app.router.add_get("/", handle)
+    
+    # Запуск опроса Telegram в фоновом режиме
+    asyncio.create_task(dp.start_polling(bot))
+    
+    # Запуск веб-сервера для Render
+    port = int(os.environ.get("PORT", 10000))
     runner = web.AppRunner(app)
     await runner.setup()
-    port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
-
-    await dp.start_polling(bot)
+    
+    # Удерживаем приложение активным
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
