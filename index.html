@@ -1,375 +1,296 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nexus Global News</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --bg: #07090e;
-            --surface: #111622;
-            --surface-hover: #192030;
-            --border: rgba(0, 255, 204, 0.12);
-            --accent: #00ffcc;
-            --accent-glow: rgba(0, 255, 204, 0.25);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --badge-bg: rgba(0, 255, 204, 0.1);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body { background: var(--bg); color: var(--text-main); min-height: 100vh; padding-bottom: 40px; }
-        
-        /* Header & Location */
-        .header {
-            position: sticky; top: 0; background: rgba(7, 9, 14, 0.92); backdrop-filter: blur(12px);
-            padding: 14px 16px; border-bottom: 1px solid var(--border); z-index: 100;
-        }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .logo { font-size: 16px; font-weight: 900; letter-spacing: -0.5px; color: var(--accent); display: flex; align-items: center; gap: 6px; }
-        .live-badge { font-size: 10px; font-weight: 700; color: #22c55e; background: rgba(34, 197, 94, 0.15); padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
-        .pulse-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } 100% { opacity: 1; transform: scale(1); } }
+import asyncio
+import logging
+import sqlite3
+import os
+import time
+from aiogram import Bot, Dispatcher, F, types
+from aiogram.filters import CommandStart, Command, CommandObject
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-        .location-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        select {
-            width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text-main);
-            padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; outline: none; transition: border-color 0.2s;
-        }
-        select:focus { border-color: var(--accent); }
+BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN_HERE")
+DB_NAME = "guildverse.db"
 
-        /* Categories */
-        .categories {
-            display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none;
-        }
-        .categories::-webkit-scrollbar { display: none; }
-        .cat-chip {
-            background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
-            padding: 7px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: all 0.2s;
-        }
-        .cat-chip.active { background: var(--accent); color: #07090e; border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+# --- БАЗА ДАННЫХ ---
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT,
+            coins INTEGER DEFAULT 100,
+            xp INTEGER DEFAULT 0,
+            level INTEGER DEFAULT 1,
+            guild_id INTEGER,
+            referrer_id INTEGER,
+            last_daily INTEGER DEFAULT 0
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS guilds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE,
+            owner_id INTEGER,
+            score INTEGER DEFAULT 0
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS quests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            reward INTEGER,
+            created_by INTEGER,
+            status TEXT DEFAULT 'active'
+        )
+    """)
+    conn.commit()
+    conn.close()
 
-        /* Feed */
-        .feed { padding: 4px 16px; display: flex; flex-direction: column; gap: 14px; }
-        .news-card {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px;
-            cursor: pointer; transition: transform 0.15s, background 0.15s; position: relative; overflow: hidden;
-        }
-        .news-card:active { transform: scale(0.98); }
-        .news-card.new-item { animation: fadeIn 0.5s ease; border-color: var(--accent); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+def db_execute(query, params=(), fetchone=False, fetchall=False, commit=False):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute(query, params)
+    res = None
+    if commit:
+        conn.commit()
+    if fetchone:
+        res = cursor.fetchone()
+    if fetchall:
+        res = cursor.fetchall()
+    conn.close()
+    return res
 
-        .news-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .news-tag { font-size: 10px; font-weight: 800; color: var(--accent); background: var(--badge-bg); padding: 3px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .news-time { font-size: 11px; color: var(--text-muted); font-weight: 500; }
-        .news-title { font-size: 15px; font-weight: 800; line-height: 1.4; margin-bottom: 8px; color: #fff; }
-        .news-snippet { font-size: 13px; color: var(--text-muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+# --- СОСТОЯНИЯ FSM ---
+class QuestStates(StatesGroup):
+    title = State()
+    reward = State()
 
-        /* Modal Full Reader */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(7, 9, 14, 0.85); backdrop-filter: blur(16px);
-            z-index: 1000; display: flex; flex-direction: column; justify-content: flex-end;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-        }
-        .modal-overlay.open { opacity: 1; pointer-events: auto; }
-        .modal-content {
-            background: var(--surface); border-top: 1px solid var(--border); border-radius: 24px 24px 0 0;
-            max-height: 85vh; overflow-y: auto; padding: 24px 20px 40px; transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
-        }
-        .modal-overlay.open .modal-content { transform: translateY(0); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .modal-close { background: rgba(255,255,255,0.08); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .modal-tag { font-size: 11px; font-weight: 800; color: var(--accent); background: var(--badge-bg); padding: 4px 10px; border-radius: 6px; text-transform: uppercase; }
-        .modal-title { font-size: 20px; font-weight: 900; line-height: 1.35; margin-bottom: 14px; color: #fff; }
-        .modal-source-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; font-weight: 600; }
-        .modal-body { font-size: 14px; line-height: 1.7; color: #cbd5e1; display: flex; flex-direction: column; gap: 14px; }
+class GuildStates(StatesGroup):
+    name = State()
 
-        .loading-state { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; font-weight: 600; }
-    </style>
-</head>
-<body>
+dp = Dispatcher(storage=MemoryStorage())
 
-    <div class="header">
-        <div class="header-top">
-            <div class="logo">⚡ NEXUS LIVE</div>
-            <div class="live-badge">
-                <div class="pulse-dot"></div>
-                <span id="liveTickerText">Прямой эфир</span>
-            </div>
-        </div>
-        <div class="location-grid">
-            <select id="countrySelect" onchange="onCountryChange()">
-                <option value="">Выберите страну</option>
-            </select>
-            <select id="citySelect" disabled onchange="onCityChange()">
-                <option value="">Все города</option>
-            </select>
-        </div>
-    </div>
+# --- КЛАВИАТУРЫ ---
+def main_keyboard():
+    kb = InlineKeyboardBuilder()
+    kb.button(text="👤 Профиль & Кошелек", callback_data="profile")
+    kb.button(text="🛡️ Гильдии (Кланы)", callback_data="guilds")
+    kb.button(text="🎯 Биржа квестов", callback_data="quests")
+    kb.button(text="🎁 Ежедневный бонус", callback_data="daily")
+    kb.button(text="👥 Рефералы", callback_data="referrals")
+    kb.button(text="🏆 Лидерборд", callback_data="leaderboard")
+    kb.adjust(2, 2, 2)
+    return kb.as_markup()
 
-    <div class="categories">
-        <div class="cat-chip active" onclick="filterCategory('all', this)">Все новости</div>
-        <div class="cat-chip" onclick="filterCategory('urgent', this)">🔥 Срочно</div>
-        <div class="cat-chip" onclick="filterCategory('economy', this)">🪙 Экономика</div>
-        <div class="cat-chip" onclick="filterCategory('tech', this)">💻 Технологии</div>
-        <div class="cat-chip" onclick="filterCategory('society', this)">🌍 Общество</div>
-    </div>
+# --- ХЭНДЛЕРЫ ---
+@dp.message(CommandStart())
+async def cmd_start(message: types.Message, command: CommandObject):
+    user_id = message.from_user.id
+    username = message.from_user.username or message.from_user.first_name
+    
+    referrer_id = None
+    if command.args and command.args.startswith("ref_"):
+        try:
+            possible_ref = int(command.args.split("_")[1])
+            if possible_ref != user_id:
+                referrer_id = possible_ref
+        except ValueError:
+            pass
 
-    <div class="feed" id="newsFeed">
-        <div class="loading-state">Выберите страну вверху для активации ленты новостей...</div>
-    </div>
+    user = db_execute("SELECT * FROM users WHERE user_id = ?", (user_id,), fetchone=True)
+    if not user:
+        db_execute(
+            "INSERT INTO users (user_id, username, referrer_id) VALUES (?, ?, ?)",
+            (user_id, username, referrer_id),
+            commit=True
+        )
+        if referrer_id:
+            db_execute("UPDATE users SET coins = coins + 50 WHERE user_id = ?", (referrer_id,), commit=True)
 
-    <!-- Модальное окно полного чтения статьи -->
-    <div class="modal-overlay" id="articleModal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <span class="modal-tag" id="modalTag">НОВОСТЬ</span>
-                <button class="modal-close" onclick="closeModalDirect()">✕</button>
-            </div>
-            <h2 class="modal-title" id="modalTitle">Заголовок статьи</h2>
-            <div class="modal-source-row">
-                <span id="modalSource">Источник: Nexus Feed</span>
-                <span id="modalTime">Только что</span>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Текст статьи целиком -->
-            </div>
-        </div>
-    </div>
+    await message.answer(
+        f"🌌 **Добро пожаловать в GuildVerse, {username}!**\n\n"
+        f"Выполняйте задания, вступайте в гильдии, переводите монеты и соревнуйтесь за первые места в рейтинге.",
+        reply_markup=main_keyboard(),
+        parse_mode="Markdown"
+    )
 
-<script>
-    const tg = window.Telegram.WebApp;
-    try { tg.expand(); } catch(e) {}
+@dp.callback_query(F.data == "profile")
+async def show_profile(call: types.CallbackQuery):
+    user_id = call.from_user.id
+    u = db_execute("SELECT username, coins, xp, level, guild_id FROM users WHERE user_id = ?", (user_id,), fetchone=True)
+    
+    guild_name = "Нет"
+    if u[4]:
+        g = db_execute("SELECT name FROM guilds WHERE id = ?", (u[4],), fetchone=True)
+        if g:
+            guild_name = g[0]
 
-    const countriesData = [
-        { country: "Россия", cities: ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань", "Нижний Новгород", "Сочи", "Владивосток"] },
-        { country: "Казахстан", cities: ["Алматы", "Астана", "Шымкент", "Караганда", "Актобе"] },
-        { country: "Беларусь", cities: ["Минск", "Гомель", "Гродно", "Брест"] },
-        { country: "Узбекистан", cities: ["Ташкент", "Самарканд", "Бухара"] },
-        { country: "ОАЭ", cities: ["Дубай", "Абу-Даби"] },
-        { country: "США", cities: ["Нью-Йорк", "Лос-Анджелес", "Майами"] }
-    ];
+    text = (
+        f"👤 **Ваш профиль:** @{u[0]}\n\n"
+        f"💰 **Монеты:** {u[1]}\n"
+        f"⭐ **Уровень:** {u[3]} ({u[2]} XP)\n"
+        f"🛡️ **Гильдия:** {guild_name}\n"
+    )
+    
+    kb = InlineKeyboardBuilder()
+    kb.button(text="« Главное меню", callback_data="menu")
+    await call.message.edit_text(text, reply_markup=kb.as_markup(), parse_mode="Markdown")
 
-    let selectedCountry = '';
-    let selectedCity = '';
-    let currentCategory = 'all';
-    let activeArticles = [];
-    let liveInterval = null;
+@dp.callback_query(F.data == "daily")
+async def get_daily(call: types.CallbackQuery):
+    user_id = call.from_user.id
+    now = int(time.time())
+    last_daily = db_execute("SELECT last_daily FROM users WHERE user_id = ?", (user_id,), fetchone=True)[0]
 
-    function initCountries() {
-        const countrySelect = document.getElementById('countrySelect');
-        countriesData.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item.country;
-            opt.textContent = item.country;
-            countrySelect.appendChild(opt);
-        });
-    }
+    if now - last_daily < 86400:
+        remaining = 86400 - (now - last_daily)
+        hours = remaining // 3600
+        await call.answer(f"⏳ Бонус доступен через {hours} ч.", show_alert=True)
+        return
 
-    function onCountryChange() {
-        selectedCountry = document.getElementById('countrySelect').value;
-        const citySelect = document.getElementById('citySelect');
-        citySelect.innerHTML = '<option value="">Все города (общая сводка)</option>';
-        citySelect.disabled = true;
-        selectedCity = '';
+    db_execute("UPDATE users SET coins = coins + 100, xp = xp + 20, last_daily = ? WHERE user_id = ?", (now, user_id), commit=True)
+    await call.answer("🎉 Вы получили +100 монет и +20 XP!", show_alert=True)
+    await show_profile(call)
 
-        if (!selectedCountry) {
-            document.getElementById('newsFeed').innerHTML = '<div class="loading-state">Выберите страну для загрузки ленты...</div>';
-            return;
-        }
+@dp.callback_query(F.data == "referrals")
+async def show_referrals(call: types.CallbackQuery):
+    bot_info = await call.bot.get_me()
+    user_id = call.from_user.id
+    ref_link = f"https://t.me/{bot_info.username}?start=ref_{user_id}"
+    
+    count = db_execute("SELECT COUNT(*) FROM users WHERE referrer_id = ?", (user_id,), fetchone=True)[0]
 
-        const countryObj = countriesData.find(c => c.country === selectedCountry);
-        if (countryObj && countryObj.cities.length > 0) {
-            countryObj.cities.forEach(city => {
-                const opt = document.createElement('option');
-                opt.value = city;
-                opt.textContent = city;
-                citySelect.appendChild(opt);
-            });
-            citySelect.disabled = false;
-        }
+    text = (
+        f"👥 **Реферальная программа**\n\n"
+        f"Приглашайте друзей и получайте **50 монет** за каждого!\n\n"
+        f"🔗 Ваши приглашённые: **{count}**\n"
+        f"📍 Ссылка:\n`{ref_link}`"
+    )
+    
+    kb = InlineKeyboardBuilder()
+    kb.button(text="« Главное меню", callback_data="menu")
+    await call.message.edit_text(text, reply_markup=kb.as_markup(), parse_mode="Markdown")
 
-        loadNewsData();
-        startRealtimeEngine();
-    }
+@dp.callback_query(F.data == "guilds")
+async def show_guilds(call: types.CallbackQuery):
+    guilds = db_execute("SELECT id, name, score FROM guilds ORDER BY score DESC LIMIT 5", fetchall=True)
+    user_guild = db_execute("SELECT guild_id FROM users WHERE user_id = ?", (call.from_user.id,), fetchone=True)[0]
 
-    function onCityChange() {
-        selectedCity = document.getElementById('citySelect').value;
-        loadNewsData();
-    }
+    text = "🛡️ **Топ-5 Гильдий:**\n\n"
+    if guilds:
+        for idx, (g_id, name, score) in enumerate(guilds, 1):
+            text += f"{idx}. **{name}** — {score} очков\n"
+    else:
+        text += "_Гильдии ещё не созданы._\n"
 
-    function filterCategory(cat, el) {
-        document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
-        el.classList.add('active');
-        currentCategory = cat;
-        renderFeed();
-    }
+    kb = InlineKeyboardBuilder()
+    if not user_guild:
+        kb.button(text="➕ Создать гильдию (200 монет)", callback_data="create_guild")
+    kb.button(text="« Главное меню", callback_data="menu")
+    kb.adjust(1)
+    await call.message.edit_text(text, reply_markup=kb.as_markup(), parse_mode="Markdown")
 
-    function loadNewsData() {
-        const loc = selectedCity ? `${selectedCity}, ${selectedCountry}` : selectedCountry;
-        
-        activeArticles = [
-            {
-                id: 1,
-                category: 'urgent',
-                tag: 'Срочно',
-                title: `Экстренный выпуск: масштабные изменения и ключевые события в регионе ${loc}`,
-                snippet: `Прямая трансляция оперативных сводок, экстренных заявлений и аналитики экспертов за последние минуты.`,
-                fullText: [
-                    `Ситуация в регионе ${loc} привлекает внимание ведущих аналитических центров. По последним данным профильных ведомств, зафиксирован беспрецедентный рост деловой и социальной активности.`,
-                    `Эксперты отмечают, что принятые на текущей неделе стратегические решения уже начинают приносить первые результаты. В частности, модернизируются ключевые городские артерии и внедряются передовые цифровые протоколы.`,
-                    `Специалисты рекомендуют следить за дальнейшими официальными обновлениями, так как ситуация продолжает динамично развиваться. Наш портал продолжает следить за развитием событий в режиме 24/7.`
-                ],
-                source: 'Nexus Global Wire',
-                time: 'Только что'
-            },
-            {
-                id: 2,
-                category: 'economy',
-                tag: 'Экономика',
-                title: `Финансовый пульс: аналитика рынка, инвестиции и ключевые показатели в ${loc}`,
-                snippet: `Обзор макроэкономических тенденций, динамика котировок и экспертный прогноз на ближайший квартал.`,
-                fullText: [
-                    `Финансовый сектор ${loc} демонстрирует высокую устойчивость на фоне глобальных рыночных колебаний. Инвесторы пересматривают портфели в пользу высокотехнологичных активов и инфраструктурных проектов.`,
-                    `По словам независимых экспертов, объем привлеченных инвестиций за последний отчетный период вырос на рекордные показатели. Это открывает новые возможности как для крупного бизнеса, так и для частных инициатив.`,
-                    `Особое внимание уделяется цифровизации финансовых расчетов и интеграции новых платежных шлюзов, что значительно ускоряет транзакции внутри региона.`
-                ],
-                source: 'Market Intelligence',
-                time: '14 мин. назад'
-            },
-            {
-                id: 3,
-                category: 'tech',
-                tag: 'Технологии',
-                title: `Цифровая трансформация: запуск инновационных проектов и инфраструктуры`,
-                snippet: `Как новейшие технологические решения меняют повседневную жизнь и городскую среду.`,
-                fullText: [
-                    `В ${loc} дан старт масштабной программе цифровизации ключевых городских систем. Новые высокоскоростные сети передачи данных и распределенные реестры обеспечивают максимальную прозрачность и безопасность всех процессов.`,
-                    `Разработчики отмечают огромный интерес со стороны местного бизнес-сообщества к внедрению автоматизированных систем управления на базе искусственного интеллекта.`,
-                    `Ожидается, что в течение ближайшего года эффективность городской логистики вырастет в несколько раз благодаря переходу на облачные стандарты нового поколения.`
-                ],
-                source: 'TechPulse Daily',
-                time: '32 мин. назад'
-            },
-            {
-                id: 4,
-                category: 'society',
-                tag: 'Общество',
-                title: `Культурный календарь и социальные инициативы: главные события недели`,
-                snippet: `Анонсы масштабных мероприятий, экологические программы и инициативы жителей.`,
-                fullText: [
-                    `Общественная жизнь ${loc} наполнена яркими событиями. Стартовал новый сезон экологических и образовательных программ, объединивших тысячи активных участников.`,
-                    `Местные власти совместно с волонтерскими организациями запустили серию грантовых конкурсов для поддержки молодежных стартапов и культурных инициатив.`,
-                    `Все подробности предстоящих мероприятий можно узнать на официальных информационных ресурсах города.`
-                ],
-                source: 'Region Life',
-                time: '1 час назад'
-            }
-        ];
+@dp.callback_query(F.data == "create_guild")
+async def start_guild_creation(call: types.CallbackQuery, state: FSMContext):
+    coins = db_execute("SELECT coins FROM users WHERE user_id = ?", (call.from_user.id,), fetchone=True)[0]
+    if coins < 200:
+        await call.answer("❌ Недостаточно монет (нужно 200).", show_alert=True)
+        return
+    await state.set_state(GuildStates.name)
+    await call.message.answer("Введите уникальное название вашей гильдии:")
 
-        renderFeed();
-    }
+@dp.message(GuildStates.name)
+async def process_guild_name(message: types.Message, state: FSMContext):
+    name = message.text.strip()
+    user_id = message.from_user.id
+    
+    try:
+        db_execute("INSERT INTO guilds (name, owner_id) VALUES (?, ?)", (name, user_id), commit=True)
+        g_id = db_execute("SELECT id FROM guilds WHERE name = ?", (name,), fetchone=True)[0]
+        db_execute("UPDATE users SET coins = coins - 200, guild_id = ? WHERE user_id = ?", (g_id, user_id), commit=True)
+        await state.clear()
+        await message.answer(f"🎉 Гильдия **{name}** успешно создана!", parse_mode="Markdown")
+    except sqlite3.IntegrityError:
+        await message.answer("❌ Гильдия с таким именем уже существует. Попробуйте другое:")
 
-    function renderFeed() {
-        const feedContainer = document.getElementById('newsFeed');
-        feedContainer.innerHTML = '';
+@dp.callback_query(F.data == "quests")
+async def show_quests(call: types.CallbackQuery):
+    quests = db_execute("SELECT id, title, reward FROM quests WHERE status = 'active' LIMIT 5", fetchall=True)
+    
+    text = "🎯 **Активные квесты:**\n\n"
+    kb = InlineKeyboardBuilder()
+    if quests:
+        for q_id, title, reward in quests:
+            text += f"• **{title}** — Награда: {reward} монет\n"
+            kb.button(text=f"Выполнить (#{q_id})", callback_data=f"complete_quest_{q_id}")
+    else:
+        text += "_Доступных квестов пока нет._\n"
 
-        let filtered = activeArticles;
-        if (currentCategory !== 'all') {
-            filtered = activeArticles.filter(item => item.category === currentCategory);
-        }
+    kb.button(text="➕ Создать квест", callback_data="add_quest")
+    kb.button(text="« Главное меню", callback_data="menu")
+    kb.adjust(1)
+    await call.message.edit_text(text, reply_markup=kb.as_markup(), parse_mode="Markdown")
 
-        if (filtered.length === 0) {
-            feedContainer.innerHTML = '<div class="loading-state">В этой категории пока нет свежих новостей</div>';
-            return;
-        }
+@dp.callback_query(F.data == "add_quest")
+async def start_quest_creation(call: types.CallbackQuery, state: FSMContext):
+    await state.set_state(QuestStates.title)
+    await call.message.answer("Введите суть задания/квеста:")
 
-        filtered.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'news-card' + (item.isNew ? ' new-item' : '');
-            card.onclick = () => openArticle(item);
-            card.innerHTML = `
-                <div class="news-meta">
-                    <span class="news-tag">${item.tag}</span>
-                    <span class="news-time">${item.time}</span>
-                </div>
-                <div class="news-title">${item.title}</div>
-                <div class="news-snippet">${item.snippet}</div>
-            `;
-            feedContainer.appendChild(card);
-        });
-    }
+@dp.message(QuestStates.title)
+async def process_quest_title(message: types.Message, state: FSMContext):
+    await state.update_data(title=message.text)
+    await state.set_state(QuestStates.reward)
+    await message.answer("Укажите размер награды в монетах (число):")
 
-    function openArticle(item) {
-        document.getElementById('modalTag').innerText = item.tag;
-        document.getElementById('modalTitle').innerText = item.title;
-        document.getElementById('modalSource').innerText = `Источник: ${item.source}`;
-        document.getElementById('modalTime').innerText = item.time;
-        
-        const bodyContainer = document.getElementById('modalBody');
-        bodyContainer.innerHTML = '';
-        item.fullText.forEach(paragraph => {
-            const p = document.createElement('p');
-            p.textContent = paragraph;
-            bodyContainer.appendChild(p);
-        });
+@dp.message(QuestStates.reward)
+async def process_quest_reward(message: types.Message, state: FSMContext):
+    if not message.text.isdigit():
+        await message.answer("Введите корректное число.")
+        return
+    
+    reward = int(message.text)
+    data = await state.get_data()
+    db_execute("INSERT INTO quests (title, reward, created_by) VALUES (?, ?, ?)", (data['title'], reward, message.from_user.id), commit=True)
+    await state.clear()
+    await message.answer("✅ Квест успешно опубликован на бирже!")
 
-        document.getElementById('articleModal').classList.add('open');
-    }
+@dp.callback_query(F.data.startswith("complete_quest_"))
+async def complete_quest(call: types.CallbackQuery):
+    q_id = int(call.data.split("_")[2])
+    quest = db_execute("SELECT reward, status FROM quests WHERE id = ?", (q_id,), fetchone=True)
+    
+    if not quest or quest[1] != 'active':
+        await call.answer("Квест более недоступен.", show_alert=True)
+        return
 
-    function closeModal(e) {
-        if (e.target.id === 'articleModal') {
-            document.getElementById('articleModal').classList.remove('open');
-        }
-    }
+    db_execute("UPDATE quests SET status = 'completed' WHERE id = ?", (q_id,), commit=True)
+    db_execute("UPDATE users SET coins = coins + ?, xp = xp + 30 WHERE user_id = ?", (quest[0], call.from_user.id), commit=True)
+    await call.answer(f"🎉 Вы выполнили квест и получили +{quest[0]} монет!", show_alert=True)
+    await show_quests(call)
 
-    function closeModalDirect() {
-        document.getElementById('articleModal').classList.remove('open');
-    }
+@dp.callback_query(F.data == "leaderboard")
+async def show_leaderboard(call: types.CallbackQuery):
+    users = db_execute("SELECT username, xp, level FROM users ORDER BY xp DESC LIMIT 10", fetchall=True)
+    text = "🏆 **Глобальный рейтинг игроков:**\n\n"
+    for idx, (username, xp, level) in enumerate(users, 1):
+        text += f"{idx}. **@{username}** — Уровень {level} ({xp} XP)\n"
 
-    // Симуляция живого потока реального времени (каждые 30 сек добавляется свежая новость)
-    function startRealtimeEngine() {
-        if (liveInterval) clearInterval(liveInterval);
-        
-        liveInterval = setInterval(() => {
-            if (!selectedCountry) return;
-            const loc = selectedCity ? `${selectedCity}, ${selectedCountry}` : selectedCountry;
-            
-            const liveUpdates = [
-                `Экстренная сводка: новые данные по развитию транспортной сети в ${loc}`,
-                `Срочно: экспертный консилиум подвел итоги инвестиционной недели в ${loc}`,
-                `Молния: объявлен запуск нового цифрового проекта в ${loc}`
-            ];
-            const randomTitle = liveUpdates[Math.floor(Math.random() * liveUpdates.length)];
+    kb = InlineKeyboardBuilder()
+    kb.button(text="« Главное меню", callback_data="menu")
+    await call.message.edit_text(text, reply_markup=kb.as_markup(), parse_mode="Markdown")
 
-            const newItem = {
-                id: Date.now(),
-                category: 'urgent',
-                tag: '⚡ Live Молния',
-                title: randomTitle,
-                snippet: `Только что поступили оперативные данные из официальных источников по ситуации в локации ${loc}.`,
-                fullText: [
-                    `В ${loc} зафиксировано срочное событие, привлекшее внимание широкой общественности.`,
-                    `Оперативные службы и экспертные группы уже работают на месте, оценивая масштабы и перспективы развития ситуации.`,
-                    `Следите за нашими экстренными выпусками — мы обновляем информацию каждую минуту.`
-                ],
-                source: 'Nexus Live Stream',
-                time: 'Только что',
-                isNew: true
-            };
+@dp.callback_query(F.data == "menu")
+async def back_to_menu(call: types.CallbackQuery):
+    await call.message.edit_text("🌌 **Главное меню GuildVerse**", reply_markup=main_keyboard(), parse_mode="Markdown")
 
-            activeArticles.unshift(newItem);
-            renderFeed();
+async def main():
+    logging.basicConfig(level=logging.INFO)
+    init_db()
+    bot = Bot(token=BOT_TOKEN)
+    await dp.start_polling(bot)
 
-            // Анимация текста тикера
-            const ticker = document.getElementById('liveTickerText');
-            ticker.textContent = 'Новая сводка получена!';
-            setTimeout(() => { ticker.textContent = 'Прямой эфир'; }, 4000);
-        }, 30000);
-    }
-
-    initCountries();
-</script>
-</body>
-</html>
+if __name__ == "__main__":
+    asyncio.run(main())
