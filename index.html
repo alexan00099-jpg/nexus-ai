@@ -3,102 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OmniAI 30-in-1 Toolkit</title>
+    <title>Lucky Star Social Casino</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: var(--tg-theme-bg-color, #090d16);
-            --text: var(--tg-theme-text-color, #f1f5f9);
-            --card: var(--tg-theme-secondary-bg-color, #131c31);
-            --accent: var(--tg-theme-button-color, #3b82f6);
-            --accent-text: var(--tg-theme-button-text-color, #ffffff);
+            --bg: var(--tg-theme-bg-color, #0b0f19);
+            --text: var(--tg-theme-text-color, #f8fafc);
+            --card: var(--tg-theme-secondary-bg-color, #131b2e);
+            --accent: var(--tg-theme-button-color, #f59e0b);
+            --accent-text: var(--tg-theme-button-text-color, #000000);
             --hint: var(--tg-theme-hint-color, #64748b);
             --border: rgba(255, 255, 255, 0.08);
+            --gold: #f59e0b;
+            --purple: #8b5cf6;
             --success: #22c55e;
-            --pro: #f59e0b;
+            --danger: #ef4444;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; user-select: none; }
         body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 
         .container { padding: 16px; max-width: 600px; margin: 0 auto; }
 
-        /* Шапка и лимиты */
-        .header-box {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            border-radius: 16px; padding: 16px; color: #fff; margin-bottom: 16px;
+        /* Шапка с балансом */
+        .balance-card {
+            background: linear-gradient(135deg, #1e1b4b 0%, #31103f 100%);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 20px; padding: 16px; margin-bottom: 16px;
             display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
         }
-        .header-box h1 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
-        .header-box p { font-size: 12px; opacity: 0.85; }
-        .limit-badge { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-
-        /* Поиск */
-        .search-box { margin-bottom: 14px; }
-        .search-input {
-            width: 100%; padding: 12px 16px; background: var(--card); border: 1px solid var(--border);
-            border-radius: 12px; color: var(--text); font-size: 14px; outline: none;
+        .balance-info h2 { font-size: 13px; color: var(--hint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .balance-amount { font-size: 24px; font-weight: 800; color: var(--gold); display: flex; align-items: center; gap: 6px; }
+        .add-coins-btn {
+            background: var(--gold); color: #000; border: none; padding: 10px 16px;
+            border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         }
 
-        /* Категории */
-        .categories-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
-        .categories-scroll::-webkit-scrollbar { display: none; }
+        /* Навигация по играм (Чипсы) */
+        .games-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
+        .games-scroll::-webkit-scrollbar { display: none; }
         .chip {
             background: var(--card); border: 1px solid var(--border); color: var(--hint);
-            padding: 8px 14px; border-radius: 20px; font-size: 13px; white-space: nowrap; cursor: pointer; font-weight: 500;
+            padding: 10px 16px; border-radius: 14px; font-size: 13px; white-space: nowrap; cursor: pointer; font-weight: 600;
+            display: flex; align-items: center; gap: 6px;
         }
         .chip.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 
-        /* Сетка инструментов */
-        .tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
-        .tool-card {
-            background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-            padding: 14px; cursor: pointer; transition: transform 0.1s, border-color 0.2s;
-            display: flex; flex-direction: column; justify-content: space-between; min-height: 90px;
-        }
-        .tool-card:active { transform: scale(0.97); }
-        .tool-card:hover { border-color: var(--accent); }
-        .tool-icon { font-size: 22px; margin-bottom: 8px; }
-        .tool-title { font-size: 13px; font-weight: 600; line-height: 1.3; }
+        /* Каркас игровых залов */
+        .game-screen { display: none; background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; text-align: center; }
+        .game-screen.active { display: block; }
 
-        /* Модальное окно инструмента */
-        .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-            z-index: 200; display: none; align-items: flex-end; justify-content: center;
-        }
-        .modal.open { display: flex; }
-        .modal-content {
-            background: var(--card); width: 100%; max-width: 600px; max-height: 85vh;
-            border-radius: 24px 24px 0 0; padding: 20px; overflow-y: auto;
-            border-top: 1px solid var(--border); animation: slideUp 0.3s ease;
-        }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .game-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .game-desc { font-size: 12px; color: var(--hint); margin-bottom: 20px; }
 
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .modal-title { font-size: 16px; font-weight: 700; }
-        .close-btn { background: none; border: none; color: var(--hint); font-size: 20px; cursor: pointer; }
+        /* Управление ставкой */
+        .bet-control { display: flex; justify-content: space-between; align-items: center; background: var(--bg); padding: 8px 14px; border-radius: 14px; margin-bottom: 16px; border: 1px solid var(--border); }
+        .bet-label { font-size: 12px; color: var(--hint); text-align: left; }
+        .bet-input-group { display: flex; align-items: center; gap: 8px; }
+        .bet-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 30px; height: 30px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .bet-value { font-size: 15px; font-weight: 700; min-width: 40px; text-align: center; }
 
-        .form-group { margin-bottom: 14px; }
-        .form-label { display: block; font-size: 12px; color: var(--hint); margin-bottom: 6px; font-weight: 500; }
-        .form-textarea, .form-input {
-            width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border);
-            color: var(--text); border-radius: 10px; font-size: 14px; outline: none; resize: vertical; min-height: 90px;
-        }
-        .form-input { min-height: auto; }
-
-        .btn {
-            background: var(--accent); color: var(--accent-text); border: none;
-            padding: 12px 16px; border-radius: 12px; font-weight: 600; width: 100%;
-            cursor: pointer; font-size: 14px; text-align: center;
-        }
-        .btn:active { transform: scale(0.98); }
-
-        .result-box {
-            background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-            padding: 12px; margin-top: 14px; font-size: 13px; word-break: break-all; white-space: pre-wrap;
+        /* 1. СЛОТЫ */
+        .slots-window { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .slot-reel {
+            background: var(--bg); border: 2px solid var(--border); width: 70px; height: 90px;
+            border-radius: 14px; font-size: 36px; display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
         }
 
-        /* Навигация снизу */
+        /* 2. КРАШ РАКЕТА */
+        .crash-area {
+            background: var(--bg); height: 160px; border-radius: 14px; border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; margin-bottom: 16px; overflow: hidden;
+        }
+        .crash-multiplier { font-size: 40px; font-weight: 900; color: var(--success); }
+        .crash-rocket { font-size: 28px; transition: transform 0.2s; }
+
+        /* 3. КОЛЕСО ФОРТУНЫ */
+        .wheel-container { position: relative; width: 200px; height: 200px; margin: 0 auto 20px auto; }
+        .wheel {
+            width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--gold);
+            background: conic-gradient(#8b5cf6 0deg 60deg, #3b82f6 60deg 120deg, #ec4899 120deg 180deg, #f59e0b 180deg 240deg, #10b981 240deg 300deg, #6366f1 300deg 360deg);
+            transition: transform 4s cubic-bezier(0.15, 0.9, 0.2, 1);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .wheel-pointer {
+            position: absolute; top: -10px; left: calc(50% - 10px); width: 0; height: 0;
+            border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 20px solid var(--text);
+            z-index: 10;
+        }
+
+        /* Универсальная кнопка */
+        .action-btn {
+            background: linear-gradient(135deg, var(--gold) 0%, #d97706 100%);
+            color: #000; border: none; padding: 14px; border-radius: 14px;
+            font-weight: 800; font-size: 15px; width: 100%; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .action-btn:active { transform: scale(0.98); }
+        .action-btn:disabled { background: var(--hint); opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+        /* Навигация внизу */
         .nav-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--card); display: flex; justify-content: space-around;
@@ -109,322 +115,387 @@
             background: none; border: none; color: var(--hint);
             font-size: 11px; cursor: pointer; text-align: center; flex: 1; font-weight: 500;
         }
-        .nav-item.active { color: var(--accent); font-weight: 700; }
+        .nav-item.active { color: var(--gold); font-weight: 700; }
         .nav-item span { display: block; font-size: 20px; margin-bottom: 2px; }
 
         /* Вкладки */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+
+        /* Таблица лидеров и магазин */
+        .leaderboard-item, .shop-item {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+            padding: 12px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .shop-item-info h4 { font-size: 14px; margin-bottom: 2px; font-weight: 700; }
+        .shop-item-info p { font-size: 11px; color: var(--hint); }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- Главная вкладка со всеми инструментами -->
-        <div id="tab-home" class="tab-content active">
-            <div class="header-box">
-                <div>
-                    <h1>OmniAI Toolkit</h1>
-                    <p>30 полезных утилит в одном окне</p>
+        <!-- Шапка с балансом -->
+        <div class="balance-card">
+            <div class="balance-info">
+                <h2>Ваш баланс</h2>
+                <div class="balance-amount" id="balanceDisplay">🪙 1,500</div>
+            </div>
+            <button class="add-coins-btn" onclick="switchTab('shop', document.querySelectorAll('.nav-item')[3])">+ Банк</button>
+        </div>
+
+        <!-- ВКЛАДКА 1: ИГРЫ -->
+        <div id="tab-games" class="tab-content active">
+            <div class="games-scroll">
+                <button class="chip active" onclick="switchGame('slots', this)">🎰 Слоты</button>
+                <button class="chip" onclick="switchGame('crash', this)">🚀 Краш Ракета</button>
+                <button class="chip" onclick="switchGame('wheel', this)">🎡 Колесо</button>
+            </div>
+
+            <!-- СЛОТЫ -->
+            <div id="game-slots" class="game-screen active">
+                <div class="game-title">Lucky 777 Slots</div>
+                <div class="game-desc">Соберите 3 одинаковых символа для джекпота!</div>
+                
+                <div class="bet-control">
+                    <div>
+                        <div class="bet-label">Ставка</div>
+                        <div style="font-size:11px; color:var(--hint);">Мин: 10</div>
+                    </div>
+                    <div class="bet-input-group">
+                        <button class="bet-btn" onclick="adjustBet(-50)">-</button>
+                        <div class="bet-value" id="slotsBet">50</div>
+                        <button class="bet-btn" onclick="adjustBet(50)">+</button>
+                    </div>
                 </div>
-                <div class="limit-badge" id="limitBadge">Лимит: 30/30</div>
+
+                <div class="slots-window">
+                    <div class="slot-reel" id="reel1">🍒</div>
+                    <div class="slot-reel" id="reel2">🍋</div>
+                    <div class="slot-reel" id="reel3">💎</div>
+                </div>
+
+                <button class="action-btn" onclick="playSlots()">Крутить слоты</button>
             </div>
 
-            <div class="search-box">
-                <input type="text" class="search-input" id="searchToolInput" placeholder="Поиск среди 30 инструментов..." oninput="filterTools()">
+            <!-- КРАШ РАКЕТА -->
+            <div id="game-crash" class="game-screen">
+                <div class="game-title">Space Crash</div>
+                <div class="game-desc">Заберите выигрыш до того, как ракета улетит!</div>
+
+                <div class="bet-control">
+                    <div>
+                        <div class="bet-label">Ставка</div>
+                    </div>
+                    <div class="bet-input-group">
+                        <button class="bet-btn" onclick="adjustCrashBet(-50)">-</button>
+                        <div class="bet-value" id="crashBet">100</div>
+                        <button class="bet-btn" onclick="adjustCrashBet(50)">+</button>
+                    </div>
+                </div>
+
+                <div class="crash-area">
+                    <div class="crash-rocket" id="rocketIcon">🚀</div>
+                    <div class="crash-multiplier" id="crashMultiplier">1.00x</div>
+                </div>
+
+                <button class="action-btn" id="crashActionBtn" onclick="startCrashGame()">Запустить ракету</button>
             </div>
 
-            <div class="categories-scroll">
-                <button class="chip active" onclick="setCategory('all', this)">Все (30)</button>
-                <button class="chip" onclick="setCategory('text', this)">📝 Текст и ИИ</button>
-                <button class="chip" onclick="setCategory('dev', this)">💻 Разработка</button>
-                <button class="chip" onclick="setCategory('office', this)">📊 Офис и Утилиты</button>
-            </div>
+            <!-- КОЛЕСО ФОРТУНЫ -->
+            <div id="game-wheel" class="game-screen">
+                <div class="game-title">Колесо Фортуны</div>
+                <div class="game-desc">Испытайте удачу и выиграйте до x10 к ставке!</div>
 
-            <div class="tools-grid" id="toolsGrid">
-                <!-- Сгенерировано динамически через JS -->
+                <div class="wheel-container">
+                    <div class="wheel-pointer"></div>
+                    <div class="wheel" id="fortuneWheel"></div>
+                </div>
+
+                <button class="action-btn" id="wheelBtn" onclick="spinWheel()">Крутить колесо (🪙 100)</button>
             </div>
         </div>
 
-        <!-- Вкладка Монетизация / PRO -->
-        <div id="tab-pro" class="tab-content">
-            <div style="background: var(--card); border: 2px solid var(--pro); border-radius: 16px; padding: 20px; text-align: center;">
-                <h2 style="font-size: 20px; margin-bottom: 8px; color: var(--pro);">👑 Безлимитный PRO</h2>
-                <p style="font-size: 13px; color: var(--hint); margin-bottom: 16px; line-height: 1.5;">
-                    Снимите суточные ограничения на все 30 утилит, получите доступ к расширенным нейросетевым моделям и приоритетной обработке запросов.
-                </p>
-                <button class="btn" style="background: var(--pro); color: #000;" onclick="buyPro()">Активировать PRO за 199 ₽ / навсегда</button>
+        <!-- ВКЛАДКА 2: ЕЖЕДНЕВНЫЙ БОНУС -->
+        <div id="tab-bonus" class="tab-content">
+            <div style="background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid var(--border); text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 10px;">🎁</div>
+                <h2 style="font-size: 18px; margin-bottom: 6px;">Ежедневный бонус</h2>
+                <p style="font-size: 13px; color: var(--hint); margin-bottom: 20px;">Заходите каждый день, чтобы получать бесплатные монеты для игры.</p>
+                
+                <div style="background: var(--bg); border-radius: 14px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border);">
+                    <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px;" id="streakStatus">День 1 из 7</div>
+                    <div style="font-size: 20px; font-weight: 800; color: var(--gold);">🪙 +250 монет</div>
+                </div>
+
+                <button class="action-btn" id="claimBonusBtn" onclick="claimDailyBonus()">Забрать бонус</button>
             </div>
         </div>
-    </div>
 
-    <!-- Модальное окно работы с инструментом -->
-    <div class="modal" id="toolModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="modalTitle">Инструмент</div>
-                <button class="close-btn" onclick="closeModal()">✕</button>
+        <!-- ВКЛАДКА 3: РЕЙТИНГ -->
+        <div id="tab-leaderboard" class="tab-content">
+            <h2 style="font-size: 18px; margin-bottom: 14px;">🏆 Лиги игроков</h2>
+            <div id="leaderboardContainer">
+                <!-- Заполняется динамически -->
             </div>
-            <div id="modalBody">
-                <!-- Динамический инпут и кнопка -->
+        </div>
+
+        <!-- ВКЛАДКА 4: МАГАЗИН (МОНЕТИЗАЦИЯ ЧЕРЕЗ TELEGRAM STARS) -->
+        <div id="tab-shop" class="tab-content">
+            <div style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); border-radius: 20px; padding: 20px; color: #fff; margin-bottom: 16px; text-align: center;">
+                <h2 style="font-size: 18px; margin-bottom: 6px;">💎 Банк Lucky Star</h2>
+                <p style="font-size: 12px; opacity: 0.9;">Пополняйте баланс фишек через официальные Telegram Stars.</p>
             </div>
-            <div id="modalResult" style="display:none;">
-                <div class="form-label" style="margin-top: 14px;">Результат:</div>
-                <div class="result-box" id="resultBoxContent"></div>
-                <button class="btn" style="margin-top: 12px; background: var(--success);" onclick="copyResult()">Скопировать результат</button>
+
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <h4>Пакет «Стартовый»</h4>
+                    <p>🪙 1,000 монет</p>
+                </div>
+                <button class="add-coins-btn" onclick="buyCoins(1000, 50)">⭐ 50</button>
+            </div>
+
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <h4>Пакет «Игрок»</h4>
+                    <p>🪙 5,000 монет + Бонус</p>
+                </div>
+                <button class="add-coins-btn" onclick="buyCoins(5000, 200)">⭐ 200</button>
+            </div>
+
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <h4>VIP Статус «High Roller»</h4>
+                    <p>🪙 20,000 монет + VIP иконка</p>
+                </div>
+                <button class="add-coins-btn" onclick="buyCoins(20000, 750)">⭐ 750</button>
             </div>
         </div>
     </div>
 
     <!-- Нижняя навигация -->
     <div class="nav-bar">
-        <button class="nav-item active" onclick="switchTab('home', this)"><span>🛠️</span>Инструменты</button>
-        <button class="nav-item" onclick="switchTab('pro', this)"><span>👑</span>PRO</button>
+        <button class="nav-item active" onclick="switchTab('games', this)"><span>🎰</span>Игры</button>
+        <button class="nav-item" onclick="switchTab('bonus', this)"><span>🎁</span>Бонус</button>
+        <button class="nav-item" onclick="switchTab('leaderboard', this)"><span>🏆</span>Рейтинг</button>
+        <button class="nav-item" onclick="switchTab('shop', this)"><span>💎</span>Магазин</button>
     </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // Список всех 30 инструментов
-    const tools = [
-        // Текст и ИИ (1-10)
-        { id: 1, cat: 'text', icon: '📝', title: 'Smart Summary', desc: 'Краткая выжимка из текста', type: 'text' },
-        { id: 2, cat: 'text', icon: '✍️', title: 'Рерайтер / Рефраз', desc: 'Изменение стиля текста', type: 'text' },
-        { id: 3, cat: 'text', icon: '🔍', title: 'Орфография', desc: 'Поиск и исправление ошибок', type: 'text' },
-        { id: 4, cat: 'text', icon: '💡', title: 'Генератор заголовков', desc: 'Кликбейт и SEO заголовки', type: 'input' },
-        { id: 5, cat: 'text', icon: '📊', title: 'Анализ тональности', desc: 'Оценка настроения текста', type: 'text' },
-        { id: 6, cat: 'text', icon: '🏷️', title: 'Генератор хэштегов', desc: 'Теги для соцсетей и постов', type: 'input' },
-        { id: 7, cat: 'text', icon: '🌐', title: 'Транслитерация', desc: 'Кириллица в латиницу и обратно', type: 'text' },
-        { id: 8, cat: 'text', icon: '✂️', title: 'Удаление дубликатов', desc: 'Очистка строк от повторов', type: 'text' },
-        { id: 9, cat: 'text', icon: '📏', title: 'Анализ текста', desc: 'Символы, слова, время чтения', type: 'text' },
-        { id: 10, cat: 'text', icon: '🎭', title: 'Переводчик стилей', desc: 'Деловой, дружеский, научный', type: 'text' },
+    // Состояние приложения
+    let balance = parseInt(localStorage.getItem('casino_balance') || '1500');
+    let slotsBet = 50;
+    let crashBet = 100;
+    let currentMultiplier = 1.00;
+    let crashInterval = null;
+    let isCrashed = false;
 
-        // Разработка (11-20)
-        { id: 11, cat: 'dev', icon: '📦', title: 'JSON Форматировщик', desc: 'Красивый вывод или минификация', type: 'text' },
-        { id: 12, cat: 'dev', icon: '🔑', title: 'Генератор UUID v4', desc: 'Создание уникальных ID', type: 'none' },
-        { id: 13, cat: 'dev', icon: '🔒', title: 'Генератор паролей', desc: 'Надежные символьные пароли', type: 'number' },
-        { id: 14, cat: 'dev', icon: '🔤', title: 'Base64 Encoder', desc: 'Кодирование и декодирование', type: 'text' },
-        { id: 15, cat: 'dev', icon: '🔗', title: 'URL Encoder / Decode', desc: 'Безопасное кодирование ссылок', type: 'text' },
-        { id: 16, cat: 'dev', icon: '🎨', title: 'HEX to RGB', desc: 'Конвертация цветов палитры', type: 'input' },
-        { id: 17, cat: 'dev', icon: '📜', title: 'Regex Шпаргалка', desc: 'Частые регулярные выражения', type: 'none' },
-        { id: 18, cat: 'dev', icon: '⏱️', title: 'Timestamp Конвертер', desc: 'Время UNIX в читаемый формат', type: 'input' },
-        { id: 19, cat: 'dev', icon: '📄', title: 'Lorem Ipsum', desc: 'Генератор текста-рыбы', type: 'number' },
-        { id: 20, cat: 'dev', icon: '🛡️', title: 'CSS Box Shadow', desc: 'Генератор теней для верстки', type: 'input' },
+    updateBalanceDisplay();
 
-        // Офис и Утилиты (21-30)
-        { id: 21, cat: 'office', icon: '💰', title: 'Калькулятор маржи', desc: 'Расчет наценки и прибыли', type: 'inputs2' },
-        { id: 22, cat: 'office', icon: '🎯', title: 'Генератор UTM-меток', desc: 'Разметка для рекламных кампаний', type: 'inputs3' },
-        { id: 23, cat: 'office', icon: '⚖️', title: 'Конвертер единиц', desc: 'Вес, длина, объем', type: 'input' },
-        { id: 24, cat: 'office', icon: '⏱️', title: 'Тайм-трекер задачи', desc: 'Оценка времени на проект', type: 'input' },
-        { id: 25, cat: 'office', icon: '❓', title: 'Генератор вопросов', desc: 'Вопросы для интервью или тестов', type: 'input' },
-        { id: 26, cat: 'office', icon: '📋', title: 'Чек-лист проекта', desc: 'Разбивка задачи на шаги', type: 'input' },
-        { id: 27, cat: 'office', icon: '🚀', title: 'Генератор идей', desc: 'Идеи для стартапов и контента', type: 'input' },
-        { id: 28, cat: 'office', icon: '🤖', title: 'Генератор отговорок', desc: 'Оправдания для дедлайнов', type: 'none' },
-        { id: 29, cat: 'office', icon: '🧮', title: 'Быстрые проценты', desc: 'Расчет скидок и прибавок', type: 'inputs2' },
-        { id: 30, cat: 'office', icon: '📌', title: 'Заметки в буфере', desc: 'Быстрое сохранение текста', type: 'text' }
-    ];
-
-    let currentCat = 'all';
-    let activeToolId = null;
-    let dailyLimit = 30;
+    function updateBalanceDisplay() {
+        document.getElementById('balanceDisplay').innerText = `🪙 ${balance.toLocaleString()}`;
+        localStorage.setItem('casino_balance', balance);
+    }
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active');
         btn.classList.add('active');
+        if (tabId === 'leaderboard') renderLeaderboard();
     }
 
-    function setCategory(cat, element) {
-        currentCat = cat;
-        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-        element.classList.add('active');
-        renderTools();
+    function switchGame(gameId, btn) {
+        document.querySelectorAll('.game-screen').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.games-scroll .chip').forEach(el => el.classList.remove('active'));
+        document.getElementById('game-' + gameId).classList.add('active');
+        btn.classList.add('active');
     }
 
-    function renderTools() {
-        let query = document.getElementById('searchToolInput').value.toLowerCase();
-        let grid = document.getElementById('toolsGrid');
-        let html = '';
-
-        let filtered = tools.filter(t => {
-            let matchesCat = currentCat === 'all' || t.cat === currentCat;
-            let matchesQuery = t.title.toLowerCase().includes(query) || t.desc.toLowerCase().includes(query);
-            return matchesCat && matchesQuery;
-        });
-
-        filtered.forEach(t => {
-            html += `
-                <div class="tool-card" onclick="openTool(${t.id})">
-                    <div class="tool-icon">${t.icon}</div>
-                    <div>
-                        <div class="tool-title">${t.title}</div>
-                        <div style="font-size:11px; color:var(--hint); margin-top:2px;">${t.desc}</div>
-                    </div>
-                </div>
-            `;
-        });
-        grid.innerHTML = html;
+    // --- ЛОГИКА СЛОТОВ ---
+    function adjustBet(amount) {
+        slotsBet = Math.max(10, slotsBet + amount);
+        document.getElementById('slotsBet').innerText = slotsBet;
     }
 
-    function filterTools() {
-        renderTools();
-    }
+    const symbols = ['🍒', '🍋', '🔔', '💎', '⭐', '7️⃣'];
 
-    function openTool(id) {
-        if (dailyLimit <= 0) {
-            alert('Исчерпан дневной лимит запросов! Перейдите в раздел PRO для безлимитного доступа.');
+    function playSlots() {
+        if (balance < slotsBet) {
+            alert('Недостаточно монет на балансе!');
             return;
         }
-        activeToolId = id;
-        let tool = tools.find(t => t.id === id);
-        document.getElementById('modalTitle').innerText = `${tool.icon} ${tool.title}`;
-        document.getElementById('modalResult').style.display = 'none';
+        balance -= slotsBet;
+        updateBalanceDisplay();
 
-        let bodyHtml = '';
-        if (tool.type === 'text') {
-            bodyHtml = `
-                <div class="form-group">
-                    <label class="form-label">Введите или вставьте текст:</label>
-                    <textarea class="form-textarea" id="toolInput" placeholder="Ваш текст здесь..."></textarea>
-                </div>
-                <button class="btn" onclick="executeTool()">Выполнить</button>
-            `;
-        } else if (tool.type === 'input') {
-            bodyHtml = `
-                <div class="form-group">
-                    <label class="form-label">Параметр или ключевое слово:</label>
-                    <input type="text" class="form-input" id="toolInput" placeholder="Введите значение...">
-                </div>
-                <button class="btn" onclick="executeTool()">Выполнить</button>
-            `;
-        } else if (tool.type === 'number') {
-            bodyHtml = `
-                <div class="form-group">
-                    <label class="form-label">Укажите числовое значение:</label>
-                    <input type="number" class="form-input" id="toolInput" value="10">
-                </div>
-                <button class="btn" onclick="executeTool()">Сгенерировать</button>
-            `;
-        } else if (tool.type === 'inputs2') {
-            bodyHtml = `
-                <div class="form-group">
-                    <label class="form-label">Значение 1:</label>
-                    <input type="number" class="form-input" id="toolInput1" placeholder="Например, 100">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Значение 2:</label>
-                    <input type="number" class="form-input" id="toolInput2" placeholder="Например, 20">
-                </div>
-                <button class="btn" onclick="executeTool()">Рассчитать</button>
-            `;
-        } else if (tool.type === 'inputs3') {
-            bodyHtml = `
-                <div class="form-group">
-                    <label class="form-label">Ссылка (URL):</label>
-                    <input type="text" class="form-input" id="toolInput1" placeholder="https://mysite.com">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Источник (utm_source):</label>
-                    <input type="text" class="form-input" id="toolInput2" placeholder="telegram">
-                </div>
-                <button class="btn" onclick="executeTool()">Создать метку</button>
-            `;
-        } else {
-            bodyHtml = `
-                <p style="font-size:13px; color:var(--hint); margin-bottom:14px;">Этот инструмент работает мгновенно без дополнительных параметров.</p>
-                <button class="btn" onclick="executeTool()">Запустить</button>
-            `;
+        let r1 = symbols[Math.floor(Math.random() * symbols.length)];
+        let r2 = symbols[Math.floor(Math.random() * symbols.length)];
+        let r3 = symbols[Math.floor(Math.random() * symbols.length)];
+
+        document.getElementById('reel1').innerText = r1;
+        document.getElementById('reel2').innerText = r2;
+        document.getElementById('reel3').innerText = r3;
+
+        if (r1 === r2 && r2 === r3) {
+            let win = slotsBet * 10;
+            balance += win;
+            setTimeout(() => alert(`🎉 ДЖЕКПОТ! Вы выиграли ${win} монет!`), 100);
+        } else if (r1 === r2 || r2 === r3 || r1 === r3) {
+            let win = slotsBet * 2;
+            balance += win;
+            setTimeout(() => alert(`✨ Выигрыш х2: +${win} монет`), 100);
+        }
+        updateBalanceDisplay();
+    }
+
+    // --- ЛОГИКА КРАШ РАКЕТЫ ---
+    function adjustCrashBet(amount) {
+        crashBet = Math.max(50, crashBet + amount);
+        document.getElementById('crashBet').innerText = crashBet;
+    }
+
+    function startCrashGame() {
+        if (balance < crashBet) {
+            alert('Недостаточно монет!');
+            return;
+        }
+        balance -= crashBet;
+        updateBalanceDisplay();
+
+        let btn = document.getElementById('crashActionBtn');
+        btn.innerText = 'ЗАБРАТЬ';
+        btn.style.background = 'var(--success)';
+        btn.onclick = cashOutCrash;
+
+        currentMultiplier = 1.00;
+        isCrashed = false;
+        let crashAt = 1.1 + Math.random() * 3.5; // Рандомный краш от 1.1x до 4.6x
+
+        crashInterval = setInterval(() => {
+            currentMultiplier += 0.04;
+            document.getElementById('crashMultiplier').innerText = currentMultiplier.toFixed(2) + 'x';
+            
+            if (currentMultiplier >= crashAt) {
+                clearInterval(crashInterval);
+                isCrashed = true;
+                document.getElementById('crashMultiplier').innerText = 'CRASHED 💥';
+                document.getElementById('crashMultiplier').style.color = 'var(--danger)';
+                resetCrashButton();
+            }
+        }, 100);
+    }
+
+    function cashOutCrash() {
+        if (isCrashed) return;
+        clearInterval(crashInterval);
+        let win = Math.floor(crashBet * currentMultiplier);
+        balance += win;
+        updateBalanceDisplay();
+        document.getElementById('crashMultiplier').style.color = 'var(--success)';
+        alert(`🏆 Успешно! Вы забрали ${win} монет (${currentMultiplier.toFixed(2)}x)`);
+        resetCrashButton();
+    }
+
+    function resetCrashButton() {
+        let btn = document.getElementById('crashActionBtn');
+        btn.innerText = 'Запустить ракету';
+        btn.style.background = 'linear-gradient(135deg, var(--gold) 0%, #d97706 100%)';
+        btn.onclick = startCrashGame;
+    }
+
+    // --- КОЛЕСО ФОРТУНЫ ---
+    let wheelDeg = 0;
+    function spinWheel() {
+        if (balance < 100) {
+            alert('Недостаточно монет (нужно 100)!');
+            return;
+        }
+        balance -= 100;
+        updateBalanceDisplay();
+
+        let btn = document.getElementById('wheelBtn');
+        btn.disabled = true;
+
+        let randomExtra = Math.floor(Math.random() * 360) + 1440; // Минимум 4 оборота
+        wheelDeg += randomExtra;
+        let wheel = document.getElementById('fortuneWheel');
+        wheel.style.transform = `rotate(${wheelDeg}deg)`;
+
+        setTimeout(() => {
+            let normalizedDeg = wheelDeg % 360;
+            let winMultiplier = 1;
+            if (normalizedDeg < 60) winMultiplier = 2;
+            else if (normalizedDeg < 120) winMultiplier = 0.5;
+            else if (normalizedDeg < 180) winMultiplier = 5;
+            else if (normalizedDeg < 240) winMultiplier = 1;
+            else if (normalizedDeg < 300) winMultiplier = 10;
+            else winMultiplier = 0;
+
+            let prize = 100 * winMultiplier;
+            balance += prize;
+            updateBalanceDisplay();
+            alert(`🎡 Колесо остановилось! Ваш выигрыш: ${prize} монет`);
+            btn.disabled = false;
+        }, 4000);
+    }
+
+    // --- ЕЖЕДНЕВНЫЙ БОНУС ---
+    function claimDailyBonus() {
+        let lastClaim = localStorage.getItem('casino_last_claim');
+        let today = new Date().toDateString();
+
+        if (lastClaim === today) {
+            alert('Вы уже забрали бонус сегодня! Возвращайтесь завтра.');
+            return;
         }
 
-        document.getElementById('modalBody').innerHTML = bodyHtml;
-        document.getElementById('toolModal').classList.add('open');
+        balance += 250;
+        updateBalanceDisplay();
+        localStorage.setItem('casino_last_claim', today);
+        alert('🎁 Бонус +250 монет успешно зачислен!');
     }
 
-    function closeModal() {
-        document.getElementById('toolModal').classList.remove('open');
+    // --- РЕЙТИНГ ---
+    function renderLeaderboard() {
+        let container = document.getElementById('leaderboardContainer');
+        let users = [
+            { name: 'Alex_Crypto', coins: 48900, badge: '👑' },
+            { name: 'LuckyKing', coins: 34200, badge: '🥈' },
+            { name: 'Satoshi_Girl', coins: 21500, badge: '🥉' },
+            { name: 'Вы (Игрок)', coins: balance, badge: '⭐' },
+            { name: 'CryptoTrader', coins: 11400, badge: '' },
+            { name: 'RollerMax', coins: 8900, badge: '' }
+        ];
+
+        users.sort((a, b) => b.coins - a.coins);
+
+        let html = '';
+        users.forEach((u, index) => {
+            html += `
+                <div class="leaderboard-item">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-weight:800; color:var(--gold); width:20px;">#${index + 1}</span>
+                        <div>
+                            <div style="font-weight:700; font-size:14px;">${u.badge} ${u.name}</div>
+                        </div>
+                    </div>
+                    <div style="font-weight:800; color:var(--gold); font-size:13px;">🪙 ${u.coins.toLocaleString()}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
     }
 
-    function executeTool() {
-        dailyLimit--;
-        document.getElementById('limitBadge').innerText = `Лимит: ${dailyLimit}/30`;
-
-        let res = '';
-        let val = document.getElementById('toolInput') ? document.getElementById('toolInput').value : '';
-
-        switch(activeToolId) {
-            case 1: res = val ? `✨ Краткая выжимка:\n${val.slice(0, 100)}... (основная суть сохранена)` : 'Введите текст'; break;
-            case 2: res = val ? `✍️ Рерайт:\n${val.split('').reverse().join('')} (стиль изменен на профессиональный)` : 'Введите текст'; break;
-            case 3: res = val ? `🔍 Ошибок не обнаружено. Текст полностью оптимизирован.` : 'Пусто'; break;
-            case 4: res = val ? `1. 🚀 ${val}: что нужно знать в 2026 году\n2. 🔥 Секреты и инсайды про ${val}\n3. 💡 Почему все говорят про ${val}` : 'Введите тему'; break;
-            case 5: res = val ? `📊 Тональность: Позитивная (индекс 84%)` : 'Пусто'; break;
-            case 6: res = val ? `#${val.replace(/\s+/g, '')} #тренды #2026 #аналитика #бизнес` : 'Введите ключевое слово'; break;
-            case 7: res = val ? val.split('').map(c => c.charCodeAt(0)).join('-') : 'Пусто'; break;
-            case 8: res = val ? [...new Set(val.split('\n'))].join('\n') : 'Пусто'; break;
-            case 9: res = val ? `Символов: ${val.length}\nСлов: ${val.split(/\s+/).filter(Boolean).length}\nВремя чтения: ~${Math.ceil(val.length / 500)} мин.` : 'Пусто'; break;
-            case 10: res = val ? `👔 Деловой стиль:\n"Настоящим подтверждается актуальность следующего тезиса: ${val}"` : 'Пусто'; break;
-            case 11: 
-                try { res = JSON.stringify(JSON.parse(val), null, 2); } catch(e) { res = 'Ошибка: Некорректный JSON формат!'; }
-                break;
-            case 12: res = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { let r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }); break;
-            case 13: 
-                let len = parseInt(val) || 12;
-                let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-                res = Array.from(crypto.getRandomValues(new Uint32Array(len))).map(x => chars[x % chars.length]).join('');
-                break;
-            case 14: res = val ? btoa(unescape(encodeURIComponent(val))) : 'Пусто'; break;
-            case 15: res = val ? encodeURIComponent(val) : 'Пусто'; break;
-            case 16: res = val ? `RGB: (${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)})` : '#3b82f6'; break;
-            case 17: res = 'Email: ^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$\nТелефон: ^\\+?[78][-\\(]?\\d{3}\\)?-?\\d{3}-?\\d{2}-?\\d{2}$'; break;
-            case 18: res = val ? new Date(parseInt(val) * 1000).toUTCString() : `Текущий Unix Timestamp: ${Math.floor(Date.now()/1000)}`; break;
-            case 19: res = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'; break;
-            case 20: res = 'box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);'; break;
-            case 21: 
-                let v1 = parseFloat(document.getElementById('toolInput1').value) || 0;
-                let v2 = parseFloat(document.getElementById('toolInput2').value) || 0;
-                res = `Маржа: ${((v1 - v2) / v1 * 100).toFixed(2)}%\nЧистая прибыль: ${v1 - v2} ₽`;
-                break;
-            case 22:
-                let url = document.getElementById('toolInput1').value || 'https://site.com';
-                let src = document.getElementById('toolInput2').value || 'tg';
-                res = `${url}?utm_source=${src}&utm_medium=mini_app&utm_campaign=launch`;
-                break;
-            case 23: res = val ? `${val} ед. = ${parseFloat(val) * 2.54} см / дюймов` : 'Введите число'; break;
-            case 24: res = val ? `Оценка задачи "${val}": ~4.5 часа активной работы` : 'Введите название'; break;
-            case 25: res = val ? `1. Каковы главные риски при решении задачи "${val}"?\n2. Какие метрики покажут успех?\n3. Сколько времени зай、мет первый этап?` : 'Введите тему'; break;
-            case 26: res = val ? `1. Анализ требований (${val})\r\n2. Проектирование архитектуры\r\n3. Реализация и тесты\r\n4. Релиз` : 'Введите проект'; break;
-            case 27: res = val ? `💡 Идея: Сервис на базе "${val}" с подписочной моделью для микро-бизнеса.` : 'Введите сферу'; break;
-            case 28: res = 'Отговорка дня: "Проблема на стороне защищенного криптографического шлюза, жду обновления протоколов."'; break;
-            case 29:
-                let base = parseFloat(document.getElementById('toolInput1').value) || 0;
-                let perc = parseFloat(document.getElementById('toolInput2').value) || 0;
-                res = `Сумма с учетом процента: ${base + (base * perc / 100)} ₽ (Прибавка: ${base * perc / 100} ₽)`;
-                break;
-            case 30: res = val ? `💾 Сохранено в буфере:\n${val}` : 'Пусто'; break;
-            default: res = 'Готово!';
-        }
-
-        document.getElementById('resultBoxContent').innerText = res;
-        document.getElementById('modalResult').style.display = 'block';
-    }
-
-    function copyResult() {
-        let text = document.getElementById('resultBoxContent').innerText;
-        navigator.clipboard.writeText(text);
-        alert('Результат скопирован в буфер обмена!');
-    }
-
-    function buyPro() {
-        if (confirm('Оформить безлимитный PRO доступ за 199 ₽ через Telegram Stars?')) {
-            alert('Поздравляем! Безлимитный режим успешно активирован.');
-            dailyLimit = 999;
-            document.getElementById('limitBadge').innerText = 'Лимит: БЕЗЛИМИТ';
-            switchTab('home', document.querySelector('.nav-item'));
+    // --- МАГАЗИН STARS ---
+    function buyCoins(coins, stars) {
+        if (confirm(`Приобрести ${coins.toLocaleString()} монет за ${stars} Telegram Stars?`)) {
+            balance += coins;
+            updateBalanceDisplay();
+            alert('🎉 Успешно! Баланс пополнен.');
         }
     }
-
-    renderTools();
 </script>
 </body>
 </html>
