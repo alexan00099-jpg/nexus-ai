@@ -3,271 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chronos 3D</title>
-    <!-- Подключаем Three.js и Telegram WebApp через CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: #030712;
-            --panel: rgba(15, 23, 42, 0.85);
-            --accent: #f59e0b;
-            --text: #f8fafc;
-            --hint: #94a3b8;
+            --bg: var(--tg-theme-bg-color, #090d16);
+            --text: var(--tg-theme-text-color, #f1f5f9);
+            --card: var(--tg-theme-secondary-bg-color, #131c31);
+            --accent: var(--tg-theme-button-color, #3b82f6);
+            --accent-text: var(--tg-theme-button-text-color, #ffffff);
+            --hint: var(--tg-theme-hint-color, #64748b);
+            --border: rgba(255, 255, 255, 0.08);
+            --success: #22c55e;
+            --pro: #f59e0b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; user-select: none; }
-        body { background: var(--bg); color: var(--text); overflow: hidden; width: 100vw; height: 100vh; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 
-        #webgl-container { position: absolute; inset: 0; z-index: 1; }
+        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
 
-        /* HUD интерфейс поверх 3D сцены */
-        .hud {
-            position: absolute; top: 0; left: 0; right: 0; padding: 14px;
-            display: flex; justify-content: space-between; align-items: center; pointer-events: none;
-            z-index: 10;
+        /* Поиск и шапка */
+        .header-search { display: flex; gap: 10px; margin-bottom: 16px; }
+        .search-input {
+            flex: 1; padding: 12px 16px; background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; color: var(--text); font-size: 14px; outline: none;
         }
-        .hud-badge {
-            background: var(--panel); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
-            padding: 8px 14px; border-radius: 12px; font-size: 13px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-
-        .bars-box { position: absolute; top: 65px; left: 14px; right: 14px; pointer-events: none; z-index: 10; display: flex; flex-direction: column; gap: 6px; }
-        .bar-bg { background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
-        .bar-fill { background: #ef4444; height: 100%; width: 100%; transition: width 0.1s; }
-
-        /* Виртуальный джойстик управления */
-        .joystick-zone { position: absolute; inset: 0; z-index: 5; touch-action: none; }
         
-        .action-btn {
-            position: absolute; bottom: 30px; right: 30px; width: 70px; height: 70px;
-            background: var(--accent); border-radius: 50%; border: none; z-index: 10;
-            font-size: 28px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); cursor: pointer;
+        /* Категории (Чипсы) */
+        .categories-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
+        .categories-scroll::-webkit-scrollbar { display: none; }
+        .chip {
+            background: var(--card); border: 1px solid var(--border); color: var(--hint);
+            padding: 8px 14px; border-radius: 20px; font-size: 13px; white-space: nowrap; cursor: pointer; font-weight: 500;
         }
-        .action-btn:active { transform: scale(0.92); }
+        .chip.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
+
+        /* Карточка новости */
+        .news-card {
+            background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 14px;
+            border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative;
+        }
+        .news-tag { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; display: inline-block; }
+        .news-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
+        .news-desc { font-size: 13px; color: var(--hint); margin-bottom: 14px; line-height: 1.5; }
+        .news-footer { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--hint); border-top: 1px solid var(--border); padding-top: 10px; }
+        
+        .action-icon { background: none; border: none; color: var(--hint); cursor: pointer; font-size: 16px; }
+        .action-icon.bookmarked { color: var(--pro); }
+
+        /* AI Саммари блок */
+        .ai-summary { background: rgba(59, 130, 246, 0.08); border-left: 3px solid var(--accent); padding: 10px; border-radius: 0 8px 8px 0; font-size: 12px; color: #93c5fd; margin-bottom: 12px; }
+
+        /* Вкладки */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* PRO промо */
+        .pro-banner {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 16px; padding: 20px; color: #000; margin-bottom: 16px; font-weight: 600;
+        }
+
+        /* Навигация */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--card); display: flex; justify-content: space-around;
+            padding: 10px 0; border-top: 1px solid var(--border); z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .nav-item {
+            background: none; border: none; color: var(--hint);
+            font-size: 11px; cursor: pointer; text-align: center; flex: 1; font-weight: 500;
+        }
+        .nav-item.active { color: var(--accent); font-weight: 700; }
+        .nav-item span { display: block; font-size: 20px; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
-    <div class="hud">
-        <div class="hud-badge">🛡️ Уровень: <span id="uiLvl">1</span></div>
-        <div class="hud-badge">🪙 Золото: <span id="uiGold">0</span></div>
+    <div class="container">
+        <!-- ВКЛАДКА 1: ЛЕНТА НОВОСТЕЙ -->
+        <div id="tab-feed" class="tab-content active">
+            <div class="header-search">
+                <input type="text" class="search-input" id="searchInput" placeholder="Поиск по новостям и тегам..." oninput="filterNews()">
+            </div>
+
+            <div class="categories-scroll">
+                <button class="chip active" onclick="setCategory('all', this)">Все</button>
+                <button class="chip" onclick="setCategory('AI & Tech', this)">🤖 ИИ и Технологии</button>
+                <button class="chip" onclick="setCategory('Crypto', this)">🪙 Крипто</button>
+                <button class="chip" onclick="setCategory('Business', this)">📈 Бизнес</button>
+                <button class="chip" onclick="setCategory('Science', this)">🚀 Наука</button>
+            </div>
+
+            <div id="newsFeedContainer">
+                <!-- Новости рендерятся динамически -->
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 2: ЗАКЛАДКИ -->
+        <div id="tab-bookmarks" class="tab-content">
+            <h2 style="font-size: 18px; margin-bottom: 12px;">📌 Сохраненные статьи</h2>
+            <div id="bookmarksContainer">
+                <!-- Закладки -->
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 3: AI ДАЙДЖЕСТ -->
+        <div id="tab-digest" class="tab-content">
+            <div class="pro-banner">
+                <h3 style="font-size: 16px; margin-bottom: 4px;">⚡ Утренний AI-Дайджест</h3>
+                <p style="font-size: 12px; opacity: 0.9; margin-bottom: 12px;">Нейросеть проанализировала 450 источников и выделила главное за сегодня.</p>
+            </div>
+            <div style="background: var(--card); border-radius: 16px; padding: 16px; border: 1px solid var(--border); font-size: 13px; line-height: 1.6;">
+                <p style="margin-bottom: 8px;"><strong>1. Прорыв в квантовых вычислениях:</strong> Ведущие лаборатории объявили о создании стабильного кубита нового поколения.</p>
+                <p style="margin-bottom: 8px;"><strong>2. Рынок криптовалют:</strong> Институциональные притоки капитала обновили месячный максимум на фоне макроэкономических новостей.</p>
+                <p><strong>3. Искусственный интеллект:</strong> Релиз новых мультимодальных моделей меняет стандарты разработки мобильных приложений.</p>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 4: PRO / МОНЕТИЗАЦИЯ -->
+        <div id="tab-pro" class="tab-content">
+            <div style="background: var(--card); border-radius: 16px; padding: 20px; border: 2px solid var(--pro); text-align: center;">
+                <h2 style="font-size: 20px; margin-bottom: 8px; color: var(--pro);">👑 NewsPulse PRO</h2>
+                <p style="font-size: 13px; color: var(--hint); margin-bottom: 16px; line-height: 1.5;">
+                    Получите доступ к эксклюзивным расследованиям, закрытым инсайдам венчурного рынка, аудиоверсиям статей и отключению рекламы.
+                </p>
+                <button style="background: var(--pro); color: #000; border: none; padding: 12px 20px; border-radius: 12px; font-weight: 700; width: 100%; cursor: pointer;" onclick="buyPro()">Подписаться за 199 ₽ / мес</button>
+            </div>
+        </div>
     </div>
 
-    <div class="bars-box">
-        <div class="bar-bg"><div class="bar-fill" id="uiHp"></div></div>
+    <!-- Навигация -->
+    <div class="nav-bar">
+        <button class="nav-item active" onclick="switchTab('feed', this)"><span>📰</span>Лента</button>
+        <button class="nav-item" onclick="switchTab('bookmarks', this)"><span>📌</span>Закладки</button>
+        <button class="nav-item" onclick="switchTab('digest', this)"><span>⚡</span>AI Дайджест</button>
+        <button class="nav-item" onclick="switchTab('pro', this)"><span>👑</span>PRO</button>
     </div>
-
-    <button class="action-btn" id="attackBtn">⚔️</button>
-    <div class="joystick-zone" id="joystickZone"></div>
-    <div id="webgl-container"></div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // Инициализация Three.js сцены, камеры и рендерера
-    const container = document.getElementById('webgl-container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x05070d);
-    scene.fog = new THREE.FogExp2(0x05070d, 0.035);
-
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    container.appendChild(renderer.domElement);
-
-    // Освещение
-    const ambientLight = new THREE.AmbientLight(0x1e293b, 1.2);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.5);
-    dirLight.position.set(15, 25, 15);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
-    scene.add(dirLight);
-
-    // Игровое состояние
-    let scoreGold = 0;
-    let playerHp = 100;
-    let playerMaxHp = 100;
-    let playerLvl = 1;
-
-    // Создание пола подземелья (модульная сетка)
-    const floorGeo = new THREE.PlaneGeometry(60, 60);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    scene.add(floor);
-
-    // Создание игрока (Low-Poly рыцарь/персонаж)
-    const playerGroup = new THREE.Group();
-    
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x6366f1, roughness: 0.3 });
-    const bodyGeom = new THREE.BoxGeometry(0.8, 1.2, 0.5);
-    const body = new THREE.Mesh(bodyGeom, bodyMat);
-    body.position.y = 0.6;
-    body.castShadow = true;
-    playerGroup.add(body);
-
-    const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.5 });
-    const headGeom = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-    const head = new THREE.Mesh(headGeom, headMat);
-    head.position.y = 1.35;
-    head.castShadow = true;
-    playerGroup.add(head);
-
-    scene.add(playerGroup);
-    playerGroup.position.set(0, 0, 0);
-
-    // Камера следует за игроком (изометрический вид)
-    function updateCamera() {
-        camera.position.x = playerGroup.position.x + 8;
-        camera.position.y = playerGroup.position.y + 12;
-        camera.position.z = playerGroup.position.z + 10;
-        camera.lookAt(playerGroup.position.x, playerGroup.position.y + 0.5, playerGroup.position.z);
-    }
-
-    // Генерация процедурных стен и препятствий в подземелье
-    const obstacleGroup = new THREE.Group();
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
-    for (let i = 0; i < 20; i++) {
-        let wGeom = new THREE.BoxGeometry(2, 2, 2);
-        let wall = new THREE.Mesh(wGeom, wallMat);
-        wall.position.set((Math.random() - 0.5) * 40, 1, (Math.random() - 0.5) * 40);
-        wall.castShadow = true;
-        wall.receiveShadow = true;
-        obstacleGroup.add(wall);
-    }
-    scene.add(obstacleGroup);
-
-    // Враги (Монстры подземелья)
-    let enemies = [];
-    const enemyGeom = new THREE.BoxGeometry(0.9, 0.9, 0.9);
-    const enemyMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
-
-    function spawnEnemy() {
-        let enemy = new THREE.Mesh(enemyGeom, enemyMat);
-        let angle = Math.random() * Math.PI * 2;
-        let dist = 15 + Math.random() * 15;
-        enemy.position.set(playerGroup.position.x + Math.cos(angle) * dist, 0.45, playerGroup.position.z + Math.sin(angle) * dist);
-        enemy.castShadow = true;
-        scene.add(enemy);
-        enemies.push({ mesh: enemy, hp: 50, speed: 0.04 });
-    }
-
-    for (let i = 0; i < 6; i++) spawnEnemy();
-
-    // Управление тач-джойстиком
-    let moveDir = { x: 0, z: 0 };
-    let isDragging = false;
-    let startPos = { x: 0, y: 0 };
-
-    const zone = document.getElementById('joystickZone');
-    zone.addEventListener('touchstart', e => {
-        isDragging = true;
-        startPos.x = e.touches[0].clientX;
-        startPos.y = e.touches[0].clientY;
-    });
-    zone.addEventListener('touchmove', e => {
-        if (!isDragging) return;
-        let dx = e.touches[0].clientX - startPos.x;
-        let dz = e.touches[0].clientY - startPos.y;
-        let len = Math.hypot(dx, dz);
-        if (len > 0) {
-            moveDir.x = (dx / len) * 0.08;
-            moveDir.z = (dz / len) * 0.08;
+    // База новостей
+    const newsData = [
+        {
+            id: 1,
+            category: 'AI & Tech',
+            title: 'GPT-5 и новые стандарты автономии агентов: что изменится для разработчиков',
+            desc: 'Эксперты оценивают влияние новых мультимодальных архитектур на автоматизацию рутинных задач и создание автономного ПО.',
+            ai: '💡 ИИ-вывод: Фокус смещается с простых чат-ботов на автономные рабочие агенты.',
+            time: '2 часа назад'
+        },
+        {
+            id: 2,
+            category: 'Crypto',
+            title: 'Биткоин закрепился на ключевых уровнях: аналитики дают прогнозы на квартал',
+            desc: 'Объемы торгов на децентрализованных биржах бьют рекорды, а приток капитала в ETF стабилизировался.',
+            ai: '💡 ИИ-вывод: Высокая волатильность сохранится до конца недели.',
+            time: '4 часа назад'
+        },
+        {
+            id: 3,
+            category: 'Business',
+            title: 'Как миллениалы переписывают правила венчурных инвестиций и стартапов',
+            desc: 'Новая волна фаундеров выбирает микро-SaaS и Telegram Mini Apps вместо тяжелых мобильных приложений в AppStore.',
+            ai: '💡 ИИ-вывод: Скорость запуска продукта важнее раздутых бюджетов на маркетинг.',
+            time: '5 часов назад'
+        },
+        {
+            id: 4,
+            category: 'Science',
+            title: 'Ученые представили новый тип экологичных батарей на органических материалах',
+            desc: 'Технология позволяет вдвое сократить время зарядки и снизить зависимость от редкоземельных металлов.',
+            ai: '💡 ИИ-вывод: Прорыв в сфере электромобилей и портативной электроники.',
+            time: '8 часов назад'
         }
-    });
-    zone.addEventListener('touchend', () => {
-        isDragging = false;
-        moveDir.x = 0;
-        moveDir.z = 0;
-    });
+    ];
 
-    // Десктопное управление клавиатурой (WASD)
-    let keys = {};
-    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+    let bookmarks = JSON.parse(localStorage.getItem('np_bookmarks') || '[]');
+    let currentCategory = 'all';
 
-    // Атака по кнопке
-    document.getElementById('attackBtn').addEventListener('click', () => {
-        // Проверяем врагов в радиусе атаки
-        enemies.forEach((en, index) => {
-            let dist = playerGroup.position.distanceTo(en.mesh.position);
-            if (dist < 3.5) {
-                en.hp -= 25;
-                // Эффект отскока при ударе
-                en.mesh.position.x += (en.mesh.position.x - playerGroup.position.x) * 0.5;
-                en.mesh.position.z += (en.mesh.position.z - playerGroup.position.z) * 0.5;
-                if (en.hp <= 0) {
-                    scene.remove(en.mesh);
-                    enemies.splice(index, 1);
-                    scoreGold += 25;
-                    setTimeout(spawnEnemy, 2000);
-                }
-            }
-        });
-    });
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        btn.classList.add('active');
+        if (tabId === 'bookmarks') renderBookmarks();
+    }
 
-    // Основной игровой цикл (60 FPS)
-    function animate() {
-        requestAnimationFrame(animate);
+    function setCategory(cat, element) {
+        currentCategory = cat;
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        element.classList.add('active');
+        renderFeed();
+    }
 
-        // Расчет движения с учетом клавиатуры или джойстика
-        let vx = moveDir.x;
-        let vz = moveDir.z;
-        if (keys['w'] || keys['arrowup']) vz = -0.08;
-        if (keys['s'] || keys['arrowdown']) vz = 0.08;
-        if (keys['a'] || keys['arrowleft']) vx = -0.08;
-        if (keys['d'] || keys['arrowright']) vx = 0.08;
-
-        if (vx !== 0 || vz !== 0) {
-            playerGroup.position.x += vx * 1.2;
-            playerGroup.position.z += vz * 1.2;
-            playerGroup.rotation.y = Math.atan2(vx, vz);
+    function toggleBookmark(id) {
+        if (bookmarks.includes(id)) {
+            bookmarks = bookmarks.filter(b => b !== id);
+        } else {
+            bookmarks.push(id);
         }
+        localStorage.setItem('np_bookmarks', JSON.stringify(bookmarks));
+        renderFeed();
+        if (document.getElementById('tab-bookmarks').classList.contains('active')) {
+            renderBookmarks();
+        }
+    }
 
-        // Интеллект врагов (преследование игрока)
-        enemies.forEach(en => {
-            let dir = new THREE.Vector3().subVectors(playerGroup.position, en.mesh.position);
-            let dist = dir.length();
-            if (dist > 1.2) {
-                dir.normalize();
-                en.mesh.position.addScaledVector(dir, en.speed);
-            } else {
-                playerHp -= 0.15;
-                if (playerHp <= 0) {
-                    alert('Ваш герой пал в подземелье! Возрождение...');
-                    playerHp = 100;
-                    playerGroup.position.set(0, 0, 0);
-                }
-            }
+    function renderFeed() {
+        let query = document.getElementById('searchInput').value.toLowerCase();
+        let container = document.getElementById('newsFeedContainer');
+        let html = '';
+
+        let filtered = newsData.filter(item => {
+            let matchesCat = currentCategory === 'all' || item.category === currentCategory;
+            let matchesQuery = item.title.toLowerCase().includes(query) || item.desc.toLowerCase().includes(query);
+            return matchesCat && matchesQuery;
         });
 
-        updateCamera();
+        if (filtered.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:var(--hint); padding:20px; font-size:13px;">Ничего не найдено</div>';
+            return;
+        }
 
-        // Обновление HTML интерфейса
-        document.getElementById('uiGold').innerText = scoreGold;
-        document.getElementById('uiLvl').innerText = playerLvl;
-        document.getElementById('uiHp').style.width = Math.max(0, (playerHp / playerMaxHp) * 100) + '%';
-
-        renderer.render(scene, camera);
+        filtered.forEach(item => {
+            let isBookmarked = bookmarks.includes(item.id);
+            html += `
+                <div class="news-card">
+                    <div class="news-tag">${item.category}</div>
+                    <div class="news-title">${item.title}</div>
+                    <div class="ai-summary">${item.ai}</div>
+                    <div class="news-desc">${item.desc}</div>
+                    <div class="news-footer">
+                        <span>🕒 ${item.time}</span>
+                        <button class="action-icon ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(${item.id})">
+                            ${isBookmarked ? '📌 В закладках' : '📌 Сохранить'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
     }
 
-    // Ресайз окна
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    function renderBookmarks() {
+        let container = document.getElementById('bookmarksContainer');
+        let savedItems = newsData.filter(item => bookmarks.includes(item.id));
+        let html = '';
 
-    animate();
+        if (savedItems.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:var(--hint); padding:20px; font-size:13px;">У вас пока нет сохраненных статей</div>';
+            return;
+        }
+
+        savedItems.forEach(item => {
+            html += `
+                <div class="news-card">
+                    <div class="news-tag">${item.category}</div>
+                    <div class="news-title">${item.title}</div>
+                    <div class="news-footer">
+                        <span>🕒 ${item.time}</span>
+                        <button class="action-icon bookmarked" onclick="toggleBookmark(${item.id})">Удалить</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function filterNews() {
+        renderFeed();
+    }
+
+    function buyPro() {
+        if (confirm('Оформить PRO-подписку через Telegram Stars за 199 ₽?')) {
+            alert('Подписка успешно активирована!');
+        }
+    }
+
+    renderFeed();
 </script>
 </body>
 </html>
