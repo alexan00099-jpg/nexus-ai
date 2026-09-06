@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CyberDuck Tap Empire</title>
+    <title>TON Empire: Monetized Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: #070913;
-            --surface: #101626;
-            --surface-card: #182238;
-            --border: rgba(255, 255, 255, 0.08);
-            --accent: #f59e0b;
-            --accent-glow: rgba(245, 158, 11, 0.35);
-            --cyan: #00f0ff;
+            --bg: #090a0f;
+            --surface: #131823;
+            --surface-card: #1c2436;
+            --border: rgba(0, 255, 204, 0.15);
+            --accent: #00ffcc;
+            --accent-glow: rgba(0, 255, 204, 0.35);
+            --purple: #8b5cf6;
             --text-main: #ffffff;
             --text-muted: #94a3b8;
         }
@@ -23,106 +23,85 @@
 
         .container { max-width: 480px; margin: 0 auto; padding: 16px; }
 
-        /* Верхняя панель игрока */
         .profile-header {
             display: flex; justify-content: space-between; align-items: center;
             background: var(--surface); border: 1px solid var(--border);
-            border-radius: 18px; padding: 12px 16px; margin-bottom: 16px;
+            border-radius: 20px; padding: 14px 18px; margin-bottom: 16px;
         }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .user-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--cyan)); display: flex; align-items: center; justify-content: center; font-size: 18px; }
-        .user-name { font-size: 13px; font-weight: 700; }
-        .league-badge { font-size: 10px; color: var(--accent); background: rgba(245,158,11,0.1); padding: 2px 8px; border-radius: 6px; font-weight: 600; display: inline-block; margin-top: 2px; }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, var(--accent), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; color: #000; }
+        .user-name { font-size: 14px; font-weight: 800; }
+        .league-badge { font-size: 11px; color: var(--accent); background: rgba(0,255,204,0.1); padding: 3px 10px; border-radius: 8px; font-weight: 700; display: inline-block; margin-top: 3px; }
 
-        .stats-row {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-            padding: 12px; text-align: center;
-        }
-        .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
-        .stat-val { font-size: 15px; font-weight: 800; color: var(--accent); }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px; text-align: center; }
+        .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
+        .stat-val { font-size: 16px; font-weight: 900; color: var(--accent); }
 
-        /* Игровые вкладки (Экраны) */
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ВКЛАДКА 1: ТАППЕР */
-        .coin-balance-container { text-align: center; margin-bottom: 24px; }
-        .main-balance { font-size: 38px; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        /* ТАППЕР */
+        .coin-box { text-align: center; margin-bottom: 20px; }
+        .main-balance { font-size: 42px; font-weight: 900; letter-spacing: -1px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
-        .tap-target-wrapper {
-            position: relative; width: 220px; height: 220px; margin: 0 auto 30px auto;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
+        .tap-area-wrapper {
+            position: relative; width: 240px; height: 240px; margin: 0 auto 24px auto;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
         .tap-glow {
             position: absolute; width: 100%; height: 100%; border-radius: 50%;
             background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-            animation: pulseGlow 2.5s infinite alternate; pointer-events: none;
+            animation: pulseGlow 2s infinite alternate; pointer-events: none;
         }
-        @keyframes pulseGlow { 0% { transform: scale(0.95); opacity: 0.6; } 100% { transform: scale(1.15); opacity: 1; } }
+        @keyframes pulseGlow { 0% { transform: scale(0.9); opacity: 0.5; } 100% { transform: scale(1.1); opacity: 0.9; } }
 
         .tap-coin {
-            width: 180px; height: 180px; border-radius: 50%;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 15px 35px rgba(245, 158, 11, 0.4), inset 0 5px 15px rgba(255,255,255,0.4);
+            width: 200px; height: 200px; border-radius: 50%;
+            background: linear-gradient(135deg, #00ffcc, #3b82f6, #8b5cf6);
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 255, 204, 0.3);
             display: flex; align-items: center; justify-content: center;
-            font-size: 80px; position: relative; z-index: 2;
+            font-size: 90px; position: relative; z-index: 2;
             transition: transform 0.08s ease;
         }
-        .tap-coin:active { transform: scale(0.92); }
+        .tap-coin:active { transform: scale(0.93); }
 
-        /* Энергия */
         .energy-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
-        .energy-info { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--text-muted); }
-        .energy-bar-bg { width: 100%; height: 8px; background: rgba(0,0,0,0.4); border-radius: 4px; overflow: hidden; }
-        .energy-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--cyan)); width: 100%; transition: width 0.2s; }
+        .energy-info { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; color: var(--text-muted); }
+        .energy-bar-bg { width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; }
+        .energy-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); width: 100%; transition: width 0.2s; }
 
-        /* Летящие числа при тапе */
-        .floating-number {
-            position: absolute; font-size: 22px; font-weight: 900; color: #fff;
+        .float-num {
+            position: absolute; font-size: 24px; font-weight: 900; color: #fff;
             text-shadow: 0 0 10px var(--accent); pointer-events: none;
-            animation: floatUp 0.8s ease-out forwards; z-index: 100;
+            animation: floatUp 0.7s ease-out forwards; z-index: 100;
         }
         @keyframes floatUp {
             0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
+            100% { opacity: 0; transform: translateY(-70px) scale(1.3); }
         }
 
-        /* ВКЛАДКА 2: МАЙНИНГ (КАРТОЧКИ ПАССИВКИ) */
-        .cards-grid { display: flex; flex-direction: column; gap: 10px; }
-        .upgrade-card {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-            padding: 12px; display: flex; justify-content: space-between; align-items: center;
+        .action-btn {
+            background: var(--accent); color: #000; border: none; padding: 12px 16px;
+            border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(0,255,204,0.3); width: 100%;
         }
-        .card-left { display: flex; align-items: center; gap: 12px; }
-        .card-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--surface-card); display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .card-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-        .card-profit { font-size: 11px; color: var(--cyan); font-weight: 600; }
-        
-        .buy-btn {
-            background: var(--accent); color: #000; border: none; padding: 8px 14px;
-            border-radius: 10px; font-weight: 800; font-size: 11px; cursor: pointer; text-transform: uppercase;
-        }
-        .buy-btn:active { transform: scale(0.95); }
+        .action-btn:active { transform: scale(0.95); }
 
-        /* Нижнее меню */
+        .card-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+
+        /* НАВИГАЦИЯ */
         .dock-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: rgba(13, 17, 28, 0.9); backdrop-filter: blur(16px);
+            background: rgba(13, 18, 35, 0.95); backdrop-filter: blur(20px);
             border-top: 1px solid var(--border); display: flex; justify-content: space-around;
             padding: 10px 0; z-index: 1000;
         }
-        .dock-item {
-            background: none; border: none; color: var(--text-muted);
-            font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; flex: 1;
-        }
-        .dock-item.active { color: var(--accent); font-weight: 800; }
-        .dock-item span { display: block; font-size: 20px; margin-bottom: 2px; }
+        .dock-btn { background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 700; cursor: pointer; text-align: center; flex: 1; }
+        .dock-btn.active { color: var(--accent); font-weight: 900; }
+        .dock-btn span { display: block; font-size: 20px; margin-bottom: 3px; }
     </style>
 </head>
 <body>
@@ -130,40 +109,40 @@
     <div class="container">
         <div class="profile-header">
             <div class="user-info">
-                <div class="user-avatar">🦆</div>
+                <div class="user-avatar" id="userAvatar">💎</div>
                 <div>
-                    <div class="user-name" id="username">CyberDuck_TON</div>
-                    <div class="league-badge">Золотая Лига ⚡</div>
+                    <div class="user-name" id="userName">Игрок</div>
+                    <div class="league-badge">TON Лидер 🚀</div>
                 </div>
             </div>
-            <div style="font-size: 12px; color: var(--cyan); font-weight: 700;">ID: 849201</div>
+            <div style="font-size: 11px; color: var(--accent); font-weight: 800;" id="refStatus">Прямой вход</div>
         </div>
 
-        <div class="stats-row">
+        <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">Прибыль в час</div>
-                <div class="stat-val" id="profitPerHour">+1,450 🪙</div>
+                <div class="stat-val">+5,400 🪙</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Тап-буст</div>
-                <div class="stat-val">+1 за таб</div>
+                <div class="stat-val">+3 ⚡</div>
             </div>
         </div>
 
         <div id="tab-tap" class="tab-content active">
-            <div class="coin-balance-container">
-                <div class="main-balance"><span id="coinCount">12,450</span> 🪙</div>
+            <div class="coin-box">
+                <div class="main-balance"><span id="coinCount">50,000</span> 🪙</div>
             </div>
 
-            <div class="tap-target-wrapper" id="tapArea" onclick="handleTap(event)">
+            <div class="tap-area-wrapper" onclick="handleTap(event)">
                 <div class="tap-glow"></div>
-                <div class="tap-coin">🦆</div>
+                <div class="tap-coin">💎</div>
             </div>
 
             <div class="energy-box">
                 <div class="energy-info">
                     <span>⚡ Энергия</span>
-                    <span id="energyText">1000 / 1000</span>
+                    <span id="energyText">2000 / 2000</span>
                 </div>
                 <div class="energy-bar-bg">
                     <div class="energy-bar-fill" id="energyFill"></div>
@@ -171,109 +150,118 @@
             </div>
         </div>
 
-        <div id="tab-mine" class="tab-content">
-            <div style="font-size: 15px; font-weight: 800; margin-bottom: 14px;">Улучшения пассивного дохода</div>
-            <div class="cards-grid">
-                <div class="upgrade-card">
-                    <div class="card-left">
-                        <div class="card-icon">🚀</div>
-                        <div>
-                            <div class="card-title">Квантовый сервер</div>
-                            <div class="card-profit">+350 / час</div>
-                        </div>
-                    </div>
-                    <button class="buy-btn" onclick="buyUpgrade(2000, 350)">2,000 🪙</button>
-                </div>
-                <div class="upgrade-card">
-                    <div class="card-left">
-                        <div class="card-icon">🤖</div>
-                        <div>
-                            <div class="card-title">ИИ-Автоматизация</div>
-                            <div class="card-profit">+800 / час</div>
-                        </div>
-                    </div>
-                    <button class="buy-btn" onclick="buyUpgrade(5000, 800)">5,000 🪙</button>
-                </div>
+        <div id="tab-refs" class="tab-content">
+            <div class="card-panel" style="text-align: center;">
+                <div style="font-size: 36px; margin-bottom: 8px;">🤝</div>
+                <div style="font-weight: 900; font-size: 15px; margin-bottom: 4px;">Реферальная система</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Приглашайте друзей и получайте по 10,000 монет за каждого.</div>
+                <button class="action-btn" onclick="copyRefLink()">Скопировать реф. ссылку</button>
+            </div>
+            <div class="card-panel">
+                <div style="font-weight: 800; font-size: 13px; margin-bottom: 8px;">Ваши приглашенные друзья (0)</div>
+                <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px 0;">Пока никого нет. Поделитесь ссылкой!</div>
             </div>
         </div>
 
-        <div id="tab-friends" class="tab-content">
-            <div style="font-size: 15px; font-weight: 800; margin-bottom: 14px;">Реферальная программа</div>
-            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; text-align: center;">
-                <div style="font-size: 32px; margin-bottom: 8px;">🤝</div>
-                <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Пригласите друзей</div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Получайте по 2,500 монет за каждого приглашенного игрока.</div>
-                <button class="buy-btn" style="width: 100%; padding: 12px;" onclick="alert('Реферальная ссылка скопирована!')">Поделиться ссылкой</button>
+        <div id="tab-ads" class="tab-content">
+            <div class="card-panel" style="text-align: center;">
+                <div style="font-size: 36px; margin-bottom: 8px;">📺</div>
+                <div style="font-weight: 900; font-size: 15px; margin-bottom: 4px;">Бонус за просмотр рекламы</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Посмотрите рекламный ролик и мгновенно восполните 100% энергии + получите 5,000 монет.</div>
+                <button class="action-btn" onclick="watchAdReward()" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color:#fff;">Смотреть рекламу (+5k 🪙)</button>
             </div>
         </div>
     </div>
 
     <div class="dock-bar">
-        <button class="dock-item active" onclick="switchTab('tap', this)"><span>🪙</span>Тап</button>
-        <button class="dock-item" onclick="switchTab('mine', this)"><span>⛏️</span>Майнинг</button>
-        <button class="dock-item" onclick="switchTab('friends', this)"><span>👥</span>Друзья</button>
+        <button class="dock-btn active" onclick="switchTab('tap', this)"><span>⚡</span>Тап</button>
+        <button class="dock-btn" onclick="switchTab('refs', this)"><span>👥</span>Рефералы</button>
+        <button class="dock-btn" onclick="switchTab('ads', this)"><span>📺</span>Реклама</button>
     </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     try { tg.expand(); } catch(e) {}
 
-    let coins = 12450;
-    let profit = 1450;
-    let energy = 1000;
-    const maxEnergy = 1000;
+    let coins = 50000;
+    let energy = 2000;
+    const maxEnergy = 2000;
+    const tapPower = 3;
+
+    // Автоматическая обработка реферального параметра из Telegram
+    window.addEventListener('DOMContentLoaded', () => {
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const user = tg.initDataUnsafe.user;
+            document.getElementById('userName').innerText = user.first_name || 'Игрок';
+            document.getElementById('userAvatar').innerText = user.first_name ? user.first_name[0].toUpperCase() : '💎';
+        }
+
+        // Проверяем, зашел ли юзер по реферальной ссылке (например, start_param = ref_12345)
+        const startParam = tg.initDataUnsafe && tg.initDataUnsafe.start_param;
+        if (startParam && startParam.startsWith('ref_')) {
+            const referrerId = startParam.replace('ref_', '');
+            document.getElementById('refStatus').innerText = `Приглашен от ID: ${referrerId}`;
+            // Здесь в реальном приложении отправляется запрос на сервер для начисления бонуса обоим
+        }
+    });
 
     function updateUI() {
         document.getElementById('coinCount').innerText = Math.floor(coins).toLocaleString();
-        document.getElementById('profitPerHour').innerText = `+${profit.toLocaleString()} 🪙`;
         document.getElementById('energyText').innerText = `${Math.floor(energy)} / ${maxEnergy}`;
         document.getElementById('energyFill').style.width = (energy / maxEnergy * 100) + '%';
     }
 
     function handleTap(e) {
-        if (energy < 1) return;
-        energy -= 1;
-        coins += 1;
+        if (energy < tapPower) return;
+        energy -= tapPower;
+        coins += tapPower;
         updateUI();
 
-        // Анимация летящих цифр в месте клика
         let x = e.clientX || (e.touches && e.touches[0].clientX);
         let y = e.clientY || (e.touches && e.touches[0].clientY);
         if (!x || !y) { x = window.innerWidth / 2; y = window.innerHeight / 2; }
 
         let el = document.createElement('div');
-        el.className = 'floating-number';
-        el.innerText = '+1';
-        el.style.left = (x - 10) + 'px';
-        el.style.top = (y - 30) + 'px';
+        el.className = 'float-num';
+        el.innerText = '+' + tapPower;
+        el.style.left = (x - 12) + 'px';
+        el.style.top = (y - 35) + 'px';
         document.body.appendChild(el);
-        setTimeout(() => el.remove(), 800);
+        setTimeout(() => el.remove(), 700);
     }
 
-    function buyUpgrade(cost, inc) {
-        if (coins < cost) {
-            alert('Недостаточно монет!');
-            return;
-        }
-        coins -= cost;
-        profit += inc;
-        updateUI();
-        alert('Улучшение успешно приобретено!');
+    function copyRefLink() {
+        let userId = (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) ? tg.initDataUnsafe.user.id : '99999';
+        let botUsername = "YourAppBot"; // Замените на юзернейм вашего бота в Telegram
+        let refLink = `https://t.me/${botUsername}/app?start=ref_${userId}`;
+        
+        navigator.clipboard.writeText(refLink).then(() => {
+            alert('Реферальная ссылка скопирована! Отправьте её друзьям.');
+        });
+    }
+
+    function watchAdReward() {
+        // Здесь в будущем подключается SDK рекламной сети (например, Adsgram.init().show())
+        alert('Загрузка рекламного ролика...');
+        setTimeout(() => {
+            coins += 5000;
+            energy = maxEnergy;
+            updateUI();
+            alert('Реклама просмотрена! Получено +5,000 монет и полная энергия.');
+        }, 1500);
     }
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.dock-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.dock-bar .dock-btn').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active');
         btn.classList.add('active');
     }
 
-    // Фоновое восстановление энергии и пассивный доход каждую секунду
     setInterval(() => {
         if (energy < maxEnergy) {
-            energy = Math.min(maxEnergy, energy + 5);
+            energy = Math.min(maxEnergy, energy + 10);
         }
-        coins += profit / 3600;
         updateUI();
     }, 1000);
 
