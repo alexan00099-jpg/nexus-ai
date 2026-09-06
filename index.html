@@ -3,269 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TON Empire: Monetized Edition</title>
+    <title>Apex 5-Level Referral App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg: #090a0f;
             --surface: #131823;
-            --surface-card: #1c2436;
             --border: rgba(0, 255, 204, 0.15);
             --accent: #00ffcc;
-            --accent-glow: rgba(0, 255, 204, 0.35);
-            --purple: #8b5cf6;
             --text-main: #ffffff;
             --text-muted: #94a3b8;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
-        body { background: var(--bg); color: var(--text-main); min-height: 100vh; padding-bottom: 90px; overflow-x: hidden; }
-
-        .container { max-width: 480px; margin: 0 auto; padding: 16px; }
-
-        .profile-header {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 20px; padding: 14px 18px; margin-bottom: 16px;
-        }
-        .user-info { display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, var(--accent), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; color: #000; }
-        .user-name { font-size: 14px; font-weight: 800; }
-        .league-badge { font-size: 11px; color: var(--accent); background: rgba(0,255,204,0.1); padding: 3px 10px; border-radius: 8px; font-weight: 700; display: inline-block; margin-top: 3px; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px; text-align: center; }
-        .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
-        .stat-val { font-size: 16px; font-weight: 900; color: var(--accent); }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ТАППЕР */
-        .coin-box { text-align: center; margin-bottom: 20px; }
-        .main-balance { font-size: 42px; font-weight: 900; letter-spacing: -1px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        
-        .tap-area-wrapper {
-            position: relative; width: 240px; height: 240px; margin: 0 auto 24px auto;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-        }
-        .tap-glow {
-            position: absolute; width: 100%; height: 100%; border-radius: 50%;
-            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-            animation: pulseGlow 2s infinite alternate; pointer-events: none;
-        }
-        @keyframes pulseGlow { 0% { transform: scale(0.9); opacity: 0.5; } 100% { transform: scale(1.1); opacity: 0.9; } }
-
-        .tap-coin {
-            width: 200px; height: 200px; border-radius: 50%;
-            background: linear-gradient(135deg, #00ffcc, #3b82f6, #8b5cf6);
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 20px 40px rgba(0, 255, 204, 0.3);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 90px; position: relative; z-index: 2;
-            transition: transform 0.08s ease;
-        }
-        .tap-coin:active { transform: scale(0.93); }
-
-        .energy-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
-        .energy-info { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; color: var(--text-muted); }
-        .energy-bar-bg { width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; }
-        .energy-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); width: 100%; transition: width 0.2s; }
-
-        .float-num {
-            position: absolute; font-size: 24px; font-weight: 900; color: #fff;
-            text-shadow: 0 0 10px var(--accent); pointer-events: none;
-            animation: floatUp 0.7s ease-out forwards; z-index: 100;
-        }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-70px) scale(1.3); }
-        }
-
-        .action-btn {
-            background: var(--accent); color: #000; border: none; padding: 12px 16px;
-            border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(0,255,204,0.3); width: 100%;
-        }
-        .action-btn:active { transform: scale(0.95); }
-
-        .card-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
-
-        /* НАВИГАЦИЯ */
-        .dock-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: rgba(13, 18, 35, 0.95); backdrop-filter: blur(20px);
-            border-top: 1px solid var(--border); display: flex; justify-content: space-around;
-            padding: 10px 0; z-index: 1000;
-        }
-        .dock-btn { background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 700; cursor: pointer; text-align: center; flex: 1; }
-        .dock-btn.active { color: var(--accent); font-weight: 900; }
-        .dock-btn span { display: block; font-size: 20px; margin-bottom: 3px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { background: var(--bg); color: var(--text-main); min-height: 100vh; padding: 16px; }
+        .container { max-width: 480px; margin: 0 auto; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+        .title { font-size: 16px; font-weight: 900; margin-bottom: 8px; color: var(--accent); }
+        .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: 900; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+        .balance { font-size: 32px; font-weight: 900; text-align: center; margin: 20px 0; color: var(--accent); }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="profile-header">
-            <div class="user-info">
-                <div class="user-avatar" id="userAvatar">💎</div>
-                <div>
-                    <div class="user-name" id="userName">Игрок</div>
-                    <div class="league-badge">TON Лидер 🚀</div>
-                </div>
-            </div>
-            <div style="font-size: 11px; color: var(--accent); font-weight: 800;" id="refStatus">Прямой вход</div>
-        </div>
+<div class="container">
+    <div class="balance" id="balanceVal">0 🪙</div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Прибыль в час</div>
-                <div class="stat-val">+5,400 🪙</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Тап-буст</div>
-                <div class="stat-val">+3 ⚡</div>
-            </div>
-        </div>
-
-        <div id="tab-tap" class="tab-content active">
-            <div class="coin-box">
-                <div class="main-balance"><span id="coinCount">50,000</span> 🪙</div>
-            </div>
-
-            <div class="tap-area-wrapper" onclick="handleTap(event)">
-                <div class="tap-glow"></div>
-                <div class="tap-coin">💎</div>
-            </div>
-
-            <div class="energy-box">
-                <div class="energy-info">
-                    <span>⚡ Энергия</span>
-                    <span id="energyText">2000 / 2000</span>
-                </div>
-                <div class="energy-bar-bg">
-                    <div class="energy-bar-fill" id="energyFill"></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-refs" class="tab-content">
-            <div class="card-panel" style="text-align: center;">
-                <div style="font-size: 36px; margin-bottom: 8px;">🤝</div>
-                <div style="font-weight: 900; font-size: 15px; margin-bottom: 4px;">Реферальная система</div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Приглашайте друзей и получайте по 10,000 монет за каждого.</div>
-                <button class="action-btn" onclick="copyRefLink()">Скопировать реф. ссылку</button>
-            </div>
-            <div class="card-panel">
-                <div style="font-weight: 800; font-size: 13px; margin-bottom: 8px;">Ваши приглашенные друзья (0)</div>
-                <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px 0;">Пока никого нет. Поделитесь ссылкой!</div>
-            </div>
-        </div>
-
-        <div id="tab-ads" class="tab-content">
-            <div class="card-panel" style="text-align: center;">
-                <div style="font-size: 36px; margin-bottom: 8px;">📺</div>
-                <div style="font-weight: 900; font-size: 15px; margin-bottom: 4px;">Бонус за просмотр рекламы</div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Посмотрите рекламный ролик и мгновенно восполните 100% энергии + получите 5,000 монет.</div>
-                <button class="action-btn" onclick="watchAdReward()" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color:#fff;">Смотреть рекламу (+5k 🪙)</button>
-            </div>
-        </div>
+    <div class="card">
+        <div class="title">Профиль</div>
+        <div class="stat-row"><span>Имя:</span> <span id="profileName">Загрузка...</span></div>
+        <div class="stat-row"><span>Ваш Telegram ID:</span> <span id="profileId">-</span></div>
     </div>
 
-    <div class="dock-bar">
-        <button class="dock-btn active" onclick="switchTab('tap', this)"><span>⚡</span>Тап</button>
-        <button class="dock-btn" onclick="switchTab('refs', this)"><span>👥</span>Рефералы</button>
-        <button class="dock-btn" onclick="switchTab('ads', this)"><span>📺</span>Реклама</button>
+    <div class="card">
+        <div class="title">Реферальная сеть (5 Уровней)</div>
+        <div class="stat-row"><span>Уровень 1 (5%):</span> <span id="lvl1">0</span></div>
+        <div class="stat-row"><span>Уровень 2 (3%):</span> <span id="lvl2">0</span></div>
+        <div class="stat-row"><span>Уровень 3 (2%):</span> <span id="lvl3">0</span></div>
+        <div class="stat-row"><span>Уровень 4 (1%):</span> <span id="lvl4">0</span></div>
+        <div class="stat-row"><span>Уровень 5 (0.5%):</span> <span id="lvl5">0</span></div>
+        <button class="btn" onclick="copyRefLink()">Пригласить друга</button>
     </div>
+</div>
 
 <script>
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    const BOT_USERNAME = 'YourAppBot';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const tg = window.Telegram.WebApp;
     try { tg.expand(); } catch(e) {}
 
-    let coins = 50000;
-    let energy = 2000;
-    const maxEnergy = 2000;
-    const tapPower = 3;
+    let currentUser = null;
 
-    // Автоматическая обработка реферального параметра из Telegram
-    window.addEventListener('DOMContentLoaded', () => {
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const user = tg.initDataUnsafe.user;
-            document.getElementById('userName').innerText = user.first_name || 'Игрок';
-            document.getElementById('userAvatar').innerText = user.first_name ? user.first_name[0].toUpperCase() : '💎';
-        }
+    async function initApp() {
+        const tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : {
+            id: Math.floor(Math.random() * 1000000),
+            first_name: 'TestUser'
+        };
 
-        // Проверяем, зашел ли юзер по реферальной ссылке (например, start_param = ref_12345)
+        document.getElementById('profileName').innerText = tgUser.first_name;
+        document.getElementById('profileId').innerText = tgUser.id;
+
         const startParam = tg.initDataUnsafe && tg.initDataUnsafe.start_param;
+        let uplineId = null;
         if (startParam && startParam.startsWith('ref_')) {
-            const referrerId = startParam.replace('ref_', '');
-            document.getElementById('refStatus').innerText = `Приглашен от ID: ${referrerId}`;
-            // Здесь в реальном приложении отправляется запрос на сервер для начисления бонуса обоим
+            uplineId = parseInt(startParam.replace('ref_', ''), 10);
         }
-    });
 
-    function updateUI() {
-        document.getElementById('coinCount').innerText = Math.floor(coins).toLocaleString();
-        document.getElementById('energyText').innerText = `${Math.floor(energy)} / ${maxEnergy}`;
-        document.getElementById('energyFill').style.width = (energy / maxEnergy * 100) + '%';
+        const { data, error } = await supabase.rpc('register_or_get_user', {
+            p_telegram_id: tgUser.id,
+            p_username: tgUser.first_name,
+            p_upline_id: uplineId
+        });
+
+        if (error) {
+            console.error('Ошибка авторизации:', error);
+            return;
+        }
+
+        currentUser = data;
+        document.getElementById('balanceVal').innerText = Math.floor(currentUser.balance) + ' 🪙';
+
+        loadReferralStats(tgUser.id);
     }
 
-    function handleTap(e) {
-        if (energy < tapPower) return;
-        energy -= tapPower;
-        coins += tapPower;
-        updateUI();
+    async function loadReferralStats(telegramId) {
+        const { data, error } = await supabase.rpc('get_referral_stats', {
+            p_telegram_id: telegramId
+        });
 
-        let x = e.clientX || (e.touches && e.touches[0].clientX);
-        let y = e.clientY || (e.touches && e.touches[0].clientY);
-        if (!x || !y) { x = window.innerWidth / 2; y = window.innerHeight / 2; }
-
-        let el = document.createElement('div');
-        el.className = 'float-num';
-        el.innerText = '+' + tapPower;
-        el.style.left = (x - 12) + 'px';
-        el.style.top = (y - 35) + 'px';
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 700);
+        if (!error && data) {
+            document.getElementById('lvl1').innerText = data.lvl1;
+            document.getElementById('lvl2').innerText = data.lvl2;
+            document.getElementById('lvl3').innerText = data.lvl3;
+            document.getElementById('lvl4').innerText = data.lvl4;
+            document.getElementById('lvl5').innerText = data.lvl5;
+        }
     }
 
     function copyRefLink() {
-        let userId = (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) ? tg.initDataUnsafe.user.id : '99999';
-        let botUsername = "YourAppBot"; // Замените на юзернейм вашего бота в Telegram
-        let refLink = `https://t.me/${botUsername}/app?start=ref_${userId}`;
-        
+        if (!currentUser) return;
+        const refLink = `https://t.me/${BOT_USERNAME}/app?start=ref_${currentUser.telegram_id}`;
         navigator.clipboard.writeText(refLink).then(() => {
-            alert('Реферальная ссылка скопирована! Отправьте её друзьям.');
+            alert('Реферальная ссылка скопирована в буфер обмена!');
         });
     }
 
-    function watchAdReward() {
-        // Здесь в будущем подключается SDK рекламной сети (например, Adsgram.init().show())
-        alert('Загрузка рекламного ролика...');
-        setTimeout(() => {
-            coins += 5000;
-            energy = maxEnergy;
-            updateUI();
-            alert('Реклама просмотрена! Получено +5,000 монет и полная энергия.');
-        }, 1500);
-    }
-
-    function switchTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.dock-bar .dock-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active');
-        btn.classList.add('active');
-    }
-
-    setInterval(() => {
-        if (energy < maxEnergy) {
-            energy = Math.min(maxEnergy, energy + 10);
-        }
-        updateUI();
-    }, 1000);
-
-    updateUI();
+    initApp();
 </script>
 </body>
 </html>
