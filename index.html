@@ -3,315 +3,539 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Empire & Artifacts MMORPG</title>
+    <title>Star Nexus: Cyber Odyssey</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: #0f1219;
-            --text: #f1f5f9;
-            --card: #1a1f2c;
-            --accent: #f59e0b;
-            --accent-text: #000000;
-            --hint: #64748b;
-            --border: rgba(255, 255, 255, 0.08);
+            --bg: #030408;
+            --surface: rgba(13, 17, 28, 0.75);
+            --surface-card: rgba(22, 28, 45, 0.65);
+            --border: rgba(0, 240, 255, 0.18);
+            --border-hover: rgba(0, 240, 255, 0.5);
+            --cyan: #00f0ff;
+            --pink: #ff007f;
             --gold: #f59e0b;
-            --mana: #3b82f6;
-            --gem: #ec4899;
-            --success: #22c55e;
-            --danger: #ef4444;
+            --purple: #9333ea;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --shadow-cyan: 0 0 20px rgba(0, 240, 255, 0.25);
+            --shadow-pink: 0 0 20px rgba(255, 0, 127, 0.25);
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 
-        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
-
-        .resources-bar {
-            background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: 18px; padding: 14px; margin-bottom: 16px;
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; outline: none; }
+        
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(147, 51, 234, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 1) 0%, #030408 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 100px;
+            overflow-x: hidden;
         }
-        .res-item { text-align: center; }
-        .res-title { font-size: 10px; color: var(--hint); text-transform: uppercase; margin-bottom: 2px; }
-        .res-val { font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 4px; }
 
-        .modules-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
-        .modules-scroll::-webkit-scrollbar { display: none; }
-        .chip {
-            background: var(--card); border: 1px solid var(--border); color: var(--hint);
-            padding: 10px 14px; border-radius: 14px; font-size: 13px; white-space: nowrap; cursor: pointer; font-weight: 600;
-            display: flex; align-items: center; gap: 6px;
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
         }
-        .chip.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 
-        .game-module { display: none; background: var(--card); border-radius: 20px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
-        .game-module.active { display: block; }
-        .module-header { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
-
-        .entity-card {
-            background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
-            padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+        /* Верхняя панель ресурсов (Кибер-дашборд) */
+        .dashboard {
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 14px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-cyan);
+            position: relative;
+            overflow: hidden;
         }
-        .entity-info { display: flex; align-items: center; gap: 10px; }
-        .entity-avatar { width: 42px; height: 42px; border-radius: 12px; background: #2a3447; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .entity-name { font-size: 14px; font-weight: 700; }
-        .entity-desc { font-size: 11px; color: var(--hint); }
 
-        .btn-action {
-            background: var(--accent); color: var(--accent-text); border: none;
-            padding: 10px 16px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer;
+        .dashboard::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            animation: scanline 3s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .res-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .res-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .res-label {
+            font-size: 9px;
+            color: var(--text-muted);
             text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
         }
-        .btn-action:active { transform: scale(0.95); opacity: 0.8; }
 
-        .mine-card { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
-        .mine-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .progress-bar { width: 100%; height: 6px; background: #2a3447; border-radius: 3px; overflow: hidden; margin-top: 8px; }
-        .progress-fill { height: 100%; background: var(--success); width: 65%; }
+        .res-value {
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
 
-        .nav-bar {
+        /* Навигационный скролл модулей */
+        .modules-nav {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            margin-bottom: 16px;
+            scrollbar-width: none;
+        }
+        .modules-nav::-webkit-scrollbar { display: none; }
+
+        .nav-chip {
+            background: var(--surface);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 10px 16px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-chip.active {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(147, 51, 234, 0.2));
+            color: var(--cyan);
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        /* Игровые модули */
+        .game-module {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .game-module.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-panel {
+            background: var(--surface-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        /* Футуристичные карточки сущностей */
+        .cyber-item {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border-color 0.2s;
+        }
+        .cyber-item:hover { border-color: var(--border-hover); }
+
+        .item-left { display: flex; align-items: center; gap: 12px; }
+        .item-icon {
+            width: 46px; height: 46px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.1);
+        }
+        .item-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+        .item-sub { font-size: 11px; color: var(--text-muted); }
+
+        /* Кнопки в кибер-стиле */
+        .cyber-btn {
+            background: linear-gradient(135deg, var(--cyan), #0088ff);
+            color: #000;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+            transition: transform 0.1s, filter 0.2s;
+        }
+        .cyber-btn:active { transform: scale(0.94); filter: brightness(1.2); }
+        .cyber-btn.pink {
+            background: linear-gradient(135deg, var(--pink), #9333ea);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+        }
+
+        /* Прогресс-бары */
+        .progress-container {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 6px;
+            height: 6px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            border-radius: 6px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Уведомления (Toast) */
+        #toast {
+            position: fixed;
+            top: 20px; left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(13, 17, 28, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--cyan);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: var(--shadow-cyan);
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* Нижняя фиксированная панель */
+        .bottom-dock {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: var(--card); display: flex; justify-content: space-around;
-            padding: 10px 0; border-top: 1px solid var(--border); z-index: 100;
-            backdrop-filter: blur(12px);
+            background: rgba(8, 11, 18, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 100;
         }
-        .nav-item {
-            background: none; border: none; color: var(--hint);
-            font-size: 11px; cursor: pointer; text-align: center; flex: 1; font-weight: 500;
+
+        .dock-item {
+            background: none; border: none;
+            color: var(--text-muted);
+            font-size: 10px; font-weight: 600;
+            cursor: pointer; text-align: center;
+            flex: 1;
+            transition: color 0.2s;
         }
-        .nav-item.active { color: var(--accent); font-weight: 700; }
-        .nav-item span { display: block; font-size: 20px; margin-bottom: 2px; }
+        .dock-item.active { color: var(--cyan); }
+        .dock-item span { display: block; font-size: 20px; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="resources-bar">
-            <div class="res-item">
-                <div class="res-title">Золото</div>
-                <div class="res-val" id="resGold" style="color: var(--gold);">🪙 2,450</div>
-            </div>
-            <div class="res-item">
-                <div class="res-title">Мана</div>
-                <div class="res-val" id="resMana" style="color: var(--mana);">🔮 820</div>
-            </div>
-            <div class="res-item">
-                <div class="res-title">Кристаллы</div>
-                <div class="res-val" id="resGems" style="color: var(--gem);">💎 150</div>
-            </div>
-        </div>
+    <div id="toast">Системное уведомление</div>
 
-        <div class="modules-scroll">
-            <button class="chip active" onclick="switchModule('castle', this)">🏰 Замок и Шахты</button>
-            <button class="chip" onclick="switchModule('heroes', this)">⚔️ Герои</button>
-            <button class="chip" onclick="switchModule('expedition', this)">🗺️ Экспедиции</button>
-            <button class="chip" onclick="switchModule('arena', this)">🏟️ PvP Арена</button>
-            <button class="chip" onclick="switchModule('craft', this)">🛠️ Кузница</button>
-            <button class="chip" onclick="switchModule('market', this)">⚖️ Аукцион</button>
-            <button class="chip" onclick="switchModule('guild', this)">🛡️ Клан</button>
-        </div>
-
-        <div id="mod-castle" class="game-module active">
-            <div class="module-header"><span>Экономика империи</span><span style="font-size:12px; color:var(--hint);">Уровень замка: 4</span></div>
-            
-            <div class="mine-card">
-                <div class="mine-top">
-                    <div>
-                        <div style="font-weight:700; font-size:14px;">🪙 Золотой рудник</div>
-                        <div style="font-size:11px; color:var(--hint);">Доход: 120 мин/час</div>
-                    </div>
-                    <button class="btn-action" onclick="collectMine('gold')">Собрать</button>
+    <div class="app-container">
+        <!-- Верхний кибер-дашборд -->
+        <div class="dashboard">
+            <div class="res-grid">
+                <div class="res-box">
+                    <div class="res-label">Кредиты</div>
+                    <div class="res-value" id="resCredits" style="color: var(--gold);">🪙 12,450</div>
                 </div>
-                <div class="progress-bar"><div class="progress-fill"></div></div>
-            </div>
-
-            <div class="mine-card">
-                <div class="mine-top">
-                    <div>
-                        <div style="font-weight:700; font-size:14px;">🔮 Башня маны</div>
-                        <div style="font-size:11px; color:var(--hint);">Доход: 80 мин/час</div>
-                    </div>
-                    <button class="btn-action" onclick="collectMine('mana')">Собрать</button>
+                <div class="res-box">
+                    <div class="res-label">Тархи</div>
+                    <div class="res-value" id="resTachyons" style="color: var(--cyan);">⚛️ 1,240</div>
                 </div>
-                <div class="progress-bar"><div class="progress-fill"></div></div>
-            </div>
-        </div>
-
-        <div id="mod-heroes" class="game-module">
-            <div class="module-header"><span>Отряд героев</span><span>⚔️ Сила: 4,850</span></div>
-            <div id="heroesList"></div>
-        </div>
-
-        <div id="mod-expedition" class="game-module">
-            <div class="module-header"><span>Подземелья и рейды</span></div>
-            <div class="entity-card">
-                <div class="entity-info">
-                    <div class="entity-avatar">🐉</div>
-                    <div>
-                        <div class="entity-name">Логово Дракона</div>
-                        <div class="entity-desc">Награда: 500 Золота. Время: 3 мин.</div>
-                    </div>
+                <div class="res-box">
+                    <div class="res-label">Кристаллы</div>
+                    <div class="res-value" id="resCrystals" style="color: var(--pink);">💎 320</div>
                 </div>
-                <button class="btn-action" onclick="startExpedition(3, 'Дракон')">В бой</button>
             </div>
         </div>
 
-        <div id="mod-arena" class="game-module">
-            <div class="module-header"><span>Рейтинг игроков</span><span>Трофеи: 1,420 🏆</span></div>
-            <div class="entity-card">
-                <div class="entity-info">
-                    <div class="entity-avatar">🛡️</div>
-                    <div>
-                        <div class="entity-name">ShadowLord</div>
-                        <div class="entity-desc">Ранг #14 в лиге</div>
+        <!-- Навигационные чипсы модулей -->
+        <div class="modules-nav">
+            <button class="nav-chip active" onclick="switchModule('station', this)">🛰️ Станция</button>
+            <button class="nav-chip" onclick="switchModule('fleet', this)">🚀 Звездолёты</button>
+            <button class="nav-chip" onclick="switchModule('sector', this)">⚔️ Сектор PvP</button>
+            <button class="nav-chip" onclick="switchModule('craft', this)">⚙️ Нано-Кузня</button>
+            <button class="nav-chip" onclick="switchModule('market', this)">🌐 Биржа</button>
+            <button class="nav-chip" onclick="switchModule('syndicate', this)">🛡️ Синдикат</button>
+        </div>
+
+        <!-- МОДУЛЬ 1: СТАНЦИЯ (ШАХТЫ И БАЗА) -->
+        <div id="mod-station" class="game-module active">
+            <div class="card-panel">
+                <div class="panel-header"><span>Орбитальный комплекс</span><span style="font-size:11px; color:var(--cyan);">Уровень базы: 7</span></div>
+                
+                <div class="cyber-item">
+                    <div class="item-left">
+                        <div class="item-icon">🪙</div>
+                        <div>
+                            <div class="item-title">Квантовый Синтезатор</div>
+                            <div class="item-sub">Добыча: 350 кредитов/час</div>
+                        </div>
                     </div>
+                    <button class="cyber-btn" onclick="collectResource('credits', 350)">Собрать</button>
                 </div>
-                <button class="btn-action" onclick="fightArena('ShadowLord')">Атаковать</button>
+                <div class="progress-container"><div class="progress-bar" id="progCredits" style="width: 75%;"></div></div>
+
+                <div class="cyber-item" style="margin-top: 14px;">
+                    <div class="item-left">
+                        <div class="item-icon">⚛️</div>
+                        <div>
+                            <div class="item-title">Уловитель Тахионов</div>
+                            <div class="item-sub">Добыча: 120 тархи/час</div>
+                        </div>
+                    </div>
+                    <button class="cyber-btn" onclick="collectResource('tachyons', 120)">Собрать</button>
+                </div>
+                <div class="progress-container"><div class="progress-bar" id="progTachyons" style="width: 45%;"></div></div>
             </div>
         </div>
 
+        <!-- МОДУЛЬ 2: ЗВЕЗДОЛЁТЫ (ГЕРОИ) -->
+        <div id="mod-fleet" class="game-module">
+            <div class="card-panel">
+                <div class="panel-header"><span>Ударный Флот</span><span style="font-size:11px; color:var(--cyan);">Мощность: 14,800 ⚡</span></div>
+                <div id="fleetList"></div>
+            </div>
+        </div>
+
+        <!-- МОДУЛЬ 3: СЕКТОР PVP -->
+        <div id="mod-sector" class="game-module">
+            <div class="card-panel">
+                <div class="panel-header"><span>Радар целей</span><span style="font-size:11px; color:var(--pink);">Рейтинг: #42</span></div>
+                
+                <div class="cyber-item">
+                    <div class="item-left">
+                        <div class="item-icon">🛸</div>
+                        <div>
+                            <div class="item-title">Крейсер «Vortex» (Мощность: 11,200)</div>
+                            <div class="item-sub">Награда: +600 Кредитов, +35 Кристаллов</div>
+                        </div>
+                    </div>
+                    <button class="cyber-btn pink" onclick="attackRival('Vortex', 600, 35)">Атака</button>
+                </div>
+
+                <div class="cyber-item">
+                    <div class="item-left">
+                        <div class="item-icon">🛰️</div>
+                        <div>
+                            <div class="item-title">Дредноут «Omega» (Мощность: 13,900)</div>
+                            <div class="item-sub">Награда: +950 Кредитов, +60 Кристаллов</div>
+                        </div>
+                    </div>
+                    <button class="cyber-btn pink" onclick="attackRival('Omega', 950, 60)">Атака</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- МОДУЛЬ 4: НАНО-КУЗНЯ -->
         <div id="mod-craft" class="game-module">
-            <div class="module-header"><span>Создание экипировки</span></div>
-            <div class="entity-card">
-                <div class="entity-info">
-                    <div class="entity-avatar">⚔️</div>
-                    <div>
-                        <div class="entity-name">Меч Ярости</div>
-                        <div class="entity-desc">Цена: 1,000 Золота</div>
+            <div class="card-panel">
+                <div class="panel-header"><span>Чертежи модулей</span></div>
+                <div class="cyber-item">
+                    <div class="item-left">
+                        <div class="item-icon">🛡️</div>
+                        <div>
+                            <div class="item-title">Плазменный щит MK-II</div>
+                            <div class="item-sub">Цена: 2,500 Кредитов</div>
+                        </div>
                     </div>
+                    <button class="cyber-btn" onclick="craftModule('Плазменный щит MK-II', 2500)">Создать</button>
                 </div>
-                <button class="btn-action" onclick="craftItem('Меч Ярости', 1000, 200)">Скрафтить</button>
             </div>
         </div>
 
+        <!-- МОДУЛЬ 5: БИРЖА -->
         <div id="mod-market" class="game-module">
-            <div class="module-header"><span>Рынок игроков</span></div>
-            <div class="entity-card">
-                <div class="entity-info">
-                    <div class="entity-avatar">💎</div>
-                    <div>
-                        <div class="entity-name">Эссенция дракона</div>
-                        <div class="entity-desc">Цена: 450 Кристаллов</div>
+            <div class="card-panel">
+                <div class="panel-header"><span>Межгалактический рынок</span></div>
+                <div class="cyber-item">
+                    <div class="item-left">
+                        <div class="item-icon">💎</div>
+                        <div>
+                            <div class="item-title">Квантовое ядро (x3)</div>
+                            <div class="item-sub">Продавец: CyberCorp | Цена: 180 Кристаллов</div>
+                        </div>
                     </div>
+                    <button class="cyber-btn" onclick="showToast('Лот успешно приобретен!')">Купить</button>
                 </div>
-                <button class="btn-action" onclick="alert('Лот успешно выкуплен!')">Купить</button>
             </div>
         </div>
 
-        <div id="mod-guild" class="game-module">
-            <div class="module-header"><span>Гильдия «Valhalla»</span></div>
-            <div style="font-size: 13px; color: var(--hint); line-height: 1.5;">
-                <p>👥 Участников: 28 / 30</p>
-                <p>💰 Казна: 45,200 золота</p>
-                <button class="btn-action" style="margin-top: 14px; width: 100%;" onclick="alert('Взнос отправлен!')">Внести вклад</button>
+        <!-- МОДУЛЬ 6: СИНДИКАТ -->
+        <div id="mod-syndicate" class="game-module">
+            <div class="card-panel">
+                <div class="panel-header"><span>Синдикат «Neon Syndicate»</span><span style="font-size:11px; color:var(--cyan);">Ур. 9</span></div>
+                <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+                    <p>👥 Пилотов в сети: 29 / 30</p>
+                    <p>⚡ Коллективный бонус: +20% к добыче ресурсов</p>
+                    <button class="cyber-btn" style="width: 100%; margin-top: 14px;" onclick="showToast('Взносы в казну зачислены!')">Внести ресурсы в банк</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="nav-bar">
-        <button class="nav-item active" onclick="switchTab('game', this)"><span>🏰</span>Империя</button>
-        <button class="nav-item" onclick="switchTab('quests', this)"><span>📜</span>Квесты</button>
-        <button class="nav-item" onclick="switchTab('profile', this)"><span>👤</span>Профиль</button>
+    <!-- Нижняя навигационная док-панель -->
+    <div class="bottom-dock">
+        <button class="dock-item active" onclick="switchTab('nexus', this)"><span>🌌</span>Нексус</button>
+        <button class="dock-item" onclick="switchTab('missions', this)"><span>📜</span>Миссии</button>
+        <button class="dock-item" onclick="switchTab('profile', this)"><span>👤</span>Пилот</button>
     </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     try { tg.expand(); } catch(e) {}
 
-    let gold = 2450;
-    let mana = 820;
-    let gems = 150;
+    let state = {
+        credits: 12450,
+        tachyons: 1240,
+        crystals: 320
+    };
 
-    const heroes = [
-        { name: 'Артём Паладин', role: 'Танк', level: 45, power: '1,850', icon: '🛡️' },
-        { name: 'Линда Маг', role: 'ДД', level: 42, power: '2,100', icon: '🔮' },
-        { name: 'Тень Рога', role: 'Ассасин', level: 38, power: '900', icon: '🗡️' }
+    const fleet = [
+        { name: 'Фрегат «Stalker»', class: 'Разведчик', level: 12, power: '4,200', icon: '🚀' },
+        { name: 'Корвет «Valkyrie»', class: 'Штурмовик', level: 15, power: '6,100', icon: '🛸' },
+        { name: 'Авианосец «Titan»', class: 'Флагман', level: 10, power: '4,500', icon: '🛰️' }
     ];
 
-    function updateResources() {
-        document.getElementById('resGold').innerText = `🪙 ${gold.toLocaleString()}`;
-        document.getElementById('resMana').innerText = `🔮 ${mana.toLocaleString()}`;
-        document.getElementById('resGems').innerText = `💎 ${gems.toLocaleString()}`;
+    function showToast(text) {
+        const toast = document.getElementById('toast');
+        toast.innerText = text;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
-    function renderHeroes() {
-        let container = document.getElementById('heroesList');
+    function updateUI() {
+        document.getElementById('resCredits').innerText = `🪙 ${state.credits.toLocaleString()}`;
+        document.getElementById('resTachyons').innerText = `⚛️ ${state.tachyons.toLocaleString()}`;
+        document.getElementById('resCrystals').innerText = `💎 ${state.crystals.toLocaleString()}`;
+    }
+
+    function renderFleet() {
         let html = '';
-        heroes.forEach(h => {
+        fleet.forEach(ship => {
             html += `
-                <div class="entity-card">
-                    <div class="entity-info">
-                        <div class="entity-avatar">${h.icon}</div>
+                <div class="cyber-item">
+                    <div class="item-left">
+                        <div class="item-icon">${ship.icon}</div>
                         <div>
-                            <div class="entity-name">${h.name} (${h.role})</div>
-                            <div class="entity-desc">Уровень ${h.level} | Сила: ${h.power}</div>
+                            <div class="item-name" style="font-weight:700; font-size:13px;">${ship.name}</div>
+                            <div class="item-sub">Класс: ${ship.class} | Ур. ${ship.level} (Сила: ${ship.power})</div>
                         </div>
                     </div>
-                    <button class="btn-action" onclick="upgradeHero('${h.name}')">Прокачать</button>
+                    <button class="cyber-btn" onclick="upgradeShip('${ship.name}')">Апгрейд</button>
                 </div>
             `;
         });
-        container.innerHTML = html;
+        document.getElementById('fleetList').innerHTML = html;
     }
 
     function switchModule(modId, btn) {
         document.querySelectorAll('.game-module').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.modules-scroll .chip').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.modules-nav .nav-chip').forEach(el => el.classList.remove('active'));
         document.getElementById('mod-' + modId).classList.add('active');
         btn.classList.add('active');
     }
 
     function switchTab(tabId, btn) {
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.dock-item').forEach(el => el.classList.remove('active'));
         btn.classList.add('active');
-        if (tabId === 'quests') alert('Активные квесты: Победить 5 боссов (3/5)');
-        if (tabId === 'profile') alert('Профиль игрока: ID #89421');
+        if (tabId === 'missions') showToast('Активная миссия: Захват сектора 7 (2/5)');
+        if (tabId === 'profile') showToast('Пилот: Commander_X | Статус: Элита');
     }
 
-    function collectMine(type) {
-        if (type === 'gold') {
-            gold += 350;
-            alert('Собрано 350 золота!');
+    function collectResource(type, amount) {
+        if (type === 'credits') {
+            state.credits += amount;
+            showToast(`Собрано +${amount} кредитов!`);
         } else {
-            mana += 180;
-            alert('Собрано 180 маны!');
+            state.tachyons += amount;
+            showToast(`Собрано +${amount} тахионов!`);
         }
-        updateResources();
+        updateUI();
     }
 
-    function upgradeHero(name) {
-        if (gold < 500) {
-            alert('Недостаточно золота (нужно 500)!');
+    function upgradeShip(name) {
+        if (state.credits < 1000) {
+            showToast('Недостаточно кредитов (нужно 1,000)!');
             return;
         }
-        gold -= 500;
-        updateResources();
-        alert(`Герой ${name} прокачан!`);
+        state.credits -= 1000;
+        updateUI();
+        showToast(`Корабль "${name}" модернизирован!`);
     }
 
-    function startExpedition(minutes, name) {
-        alert(`Экспедиция в локацию "${name}" началась!`);
+    function attackRival(rival, rewardCredits, rewardCrystals) {
+        state.credits += rewardCredits;
+        state.crystals += rewardCrystals;
+        updateUI();
+        showToast(`Победа над ${rival}! Добыча: +${rewardCredits} кредитов`);
     }
 
-    function fightArena(rival) {
-        gold += 400;
-        updateResources();
-        alert(`Победа над ${rival}! Получено 400 золота.`);
-    }
-
-    function craftItem(item, costGold, costMana) {
-        if (gold < costGold) {
-            alert('Недостаточно золота!');
+    function craftModule(item, cost) {
+        if (state.credits < cost) {
+            showToast('Недостаточно кредитов для нано-сборки!');
             return;
         }
-        gold -= costGold;
-        updateResources();
-        alert(`Предмет "${item}" успешно создан!`);
+        state.credits -= cost;
+        updateUI();
+        showToast(`Модуль "${item}" успешно создан!`);
     }
 
-    renderHeroes();
-    updateResources();
+    renderFleet();
+    updateUI();
 </script>
 </body>
 </html>
