@@ -6,189 +6,188 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: var(--tg-theme-bg-color, #0b0f19);
-            --text: var(--tg-theme-text-color, #f8fafc);
-            --card: var(--tg-theme-secondary-bg-color, #161e2e);
-            --accent: var(--tg-theme-button-color, #6366f1);
+            --bg: var(--tg-theme-bg-color, #0a0e17);
+            --text: var(--tg-theme-text-color, #f3f4f6);
+            --card: var(--tg-theme-secondary-bg-color, #111827);
+            --accent: var(--tg-theme-button-color, #f59e0b);
             --accent-text: var(--tg-theme-button-text-color, #ffffff);
-            --hint: var(--tg-theme-hint-color, #94a3b8);
+            --hint: var(--tg-theme-hint-color, #9ca3af);
             --border: rgba(255, 255, 255, 0.08);
-            --success: #22c55e;
+            --success: #10b981;
+            --danger: #ef4444;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; user-select: none; }
-        body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 80px; }
 
-        .container { padding: 16px; max-width: 550px; margin: 0 auto; }
+        .container { padding: 14px; max-width: 550px; margin: 0 auto; }
 
-        /* Профиль героя */
-        .hero-card {
-            background: linear-gradient(135deg, #1e1b4b, #311042); border-radius: 20px; padding: 18px;
-            margin-bottom: 16px; border: 1px solid rgba(99, 102, 241, 0.3); text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        /* Верхняя панель ресурсов */
+        .resources-bar {
+            display: flex; justify-content: space-around; background: var(--card);
+            padding: 10px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 14px;
+            font-size: 13px; font-weight: bold;
         }
-        .hero-avatar { font-size: 48px; margin-bottom: 6px; }
-        .hero-name { font-size: 18px; font-weight: 800; }
-        .hero-level { font-size: 13px; color: #a5b4fc; margin-bottom: 12px; }
-        
-        .xp-container { background: rgba(0,0,0,0.4); border-radius: 10px; height: 10px; width: 100%; overflow: hidden; padding: 2px; }
-        .xp-bar { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); border-radius: 6px; width: 0%; transition: width 0.4s; }
-        .xp-text { display: flex; justify-content: space-between; font-size: 11px; color: var(--hint); margin-top: 4px; }
+        .res-item { display: flex; align-items: center; gap: 4px; }
 
         /* Вкладки */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         .card {
-            background: var(--card); border-radius: 16px; padding: 16px;
+            background: var(--card); border-radius: 14px; padding: 14px;
             margin-bottom: 12px; border: 1px solid var(--border);
         }
-        .card h3 { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .card h3 { font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 
-        input, textarea {
-            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
-            background: var(--bg); color: var(--text); font-size: 14px; margin-bottom: 10px; outline: none;
-        }
-        
         .btn {
             background: var(--accent); color: var(--accent-text); border: none;
-            padding: 12px 16px; border-radius: 10px; font-weight: 600; width: 100%;
-            cursor: pointer; font-size: 14px; transition: transform 0.1s;
+            padding: 10px 14px; border-radius: 8px; font-weight: 600; width: 100%;
+            cursor: pointer; font-size: 13px; transition: transform 0.1s;
         }
         .btn:active { transform: scale(0.97); }
+        .btn-secondary { background: #374151; color: #fff; }
 
-        .output { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 8px; color: #a5b4fc; text-align: center; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
         /* Навигация */
         .nav-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--card); display: flex; justify-content: space-around;
-            padding: 10px 0; border-top: 1px solid var(--border); z-index: 100;
-            backdrop-filter: blur(12px);
+            padding: 8px 0; border-top: 1px solid var(--border); z-index: 100;
         }
         .nav-item {
             background: none; border: none; color: var(--hint);
-            font-size: 11px; cursor: pointer; text-align: center; flex: 1;
+            font-size: 10px; cursor: pointer; text-align: center; flex: 1;
         }
         .nav-item.active { color: var(--accent); font-weight: bold; }
-        .nav-item span { display: block; font-size: 20px; margin-bottom: 2px; }
+        .nav-item span { display: block; font-size: 18px; margin-bottom: 2px; }
+
+        .log-box {
+            background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px;
+            font-size: 11px; color: var(--hint); height: 80px; overflow-y: auto; margin-top: 8px;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- Шапка персонажа -->
-        <div class="hero-card">
-            <div class="hero-avatar">🧙‍♂️</div>
-            <div class="hero-name" id="heroName">Герой фокуса</div>
-            <div class="hero-level" id="heroLevelText">Уровень 1 • Новичок продуктивности</div>
-            <div class="xp-container">
-                <div class="xp-bar" id="xpBar"></div>
+        <!-- Ресурсы -->
+        <div class="resources-bar">
+            <div class="res-item">🪙 <span id="goldVal">150</span></div>
+            <div class="res-item">💎 <span id="gemVal">5</span></div>
+            <div class="res-item">🍖 <span id="meatVal">10</span></div>
+        </div>
+
+        <!-- ВКЛАДКА 1: ТАВЕРНА (База и доход) -->
+        <div id="tab-tavern" class="tab-content active">
+            <div class="card">
+                <h3>🍺 Таверна «Пьяный Дракон»</h3>
+                <p style="font-size: 12px; color: var(--hint); margin-bottom: 10px;">Привлекает путников и приносит стабильный доход золота.</p>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                    <span>Уровень: <strong id="tavernLvl">1</strong></span>
+                    <span>Доход: <strong style="color:var(--success)">+<span id="tavernIncome">2</span> зол/сек</strong></span>
+                </div>
+                <button class="btn" onclick="upgradeTavern()">Улучшить таверну (<span id="tavernCost">100</span> 🪙)</button>
             </div>
-            <div class="xp-text">
-                <span>XP: <span id="currentXp">0</span></span>
-                <span>До ур. <span id="nextXp">100</span></span>
+
+            <div class="card">
+                <h3>📜 Журнал событий гильдии</h3>
+                <div class="log-box" id="gameLog">
+                    [00:00] Добро пожаловать в гильдию, Мастер! Нанимайте героев и отправляйте их в походы.
+                </div>
             </div>
         </div>
 
-        <!-- ВКЛАДКА 1: ПОЛЕЗНЫЙ ФОКУС (ПОМОДОРО) -->
-        <div id="tab-focus" class="tab-content active">
-            <div class="card" style="text-align: center;">
-                <h3>⚡ Фокус-Арена (Таймер сессии)</h3>
-                <p style="font-size: 12px; color: var(--hint); margin-bottom: 14px;">Работайте без отвлечений 25 минут, чтобы получить много опыта.</p>
-                <div style="font-size: 42px; font-weight: 800; margin: 15px 0; color: #a5b4fc;" id="timerDisplay">25:00</div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn" onclick="startTimer()">Старт фокуса</button>
-                    <button class="btn" onclick="stopTimer()" style="background: #334155;">Пауза</button>
-                </div>
-            </div>
-
+        <!-- ВКЛАДКА 2: ГЕРОИ (Ростер) -->
+        <div id="tab-heroes" class="tab-content">
             <div class="card">
-                <h3>📜 Задачи на день (Quest Log)</h3>
-                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                    <input type="text" id="taskInput" placeholder="Новая задача..." style="margin-bottom:0;">
-                    <button class="btn" onclick="addTask()" style="width: 90px;">Добавить</button>
-                </div>
-                <div id="taskList"></div>
+                <h3>⚔️ Нанять искателя приключений</h3>
+                <p style="font-size: 12px; color: var(--hint); margin-bottom: 10px;">Герои ходят в подземелья и добывают ценные ресурсы.</p>
+                <button class="btn" onclick="hireHero()">Нанять героя (300 🪙)</button>
+            </div>
+            <div id="heroList">
+                <!-- Рендер героев -->
             </div>
         </div>
 
-        <!-- ВКЛАДКА 2: ПРИВЫЧКИ (HABITS) -->
-        <div id="tab-habits" class="tab-content">
+        <!-- ВКЛАДКА 3: ПОДЗЕМОЧНЫЕ ВЫЛАЗКИ -->
+        <div id="tab-dungeon" class="tab-content">
             <div class="card">
-                <h3>🔥 Трекер полезных привычек</h3>
-                <p style="font-size: 12px; color: var(--hint); margin-bottom: 12px;">Отмечайте выполнение ежедневно, чтобы растить стрик и получать награды.</p>
-                <div id="habitList">
-                    <!-- Привычки рендерятся тут -->
+                <h3>🕳️ Экспедиция в подземелье</h3>
+                <p style="font-size: 12px; color: var(--hint); margin-bottom: 10px;">Отправьте героев в поход за рудой и редкими артефактами.</p>
+                
+                <div style="margin-bottom: 10px; font-size: 13px;">
+                    <label>Выбрать локацию:</label>
+                    <select id="dungeonSelect" style="width:1px; width:100%; padding:8px; margin-top:4px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px;">
+                        <option value="1">Темный Лес (Сложность: Легко)</option>
+                        <option value="2">Заброшенные Руины (Сложность: Средне)</option>
+                    </select>
                 </div>
-                <button class="btn" onclick="addHabit()" style="margin-top: 8px; background: #334155;">+ Добавить привычку</button>
+
+                <div id="expeditionStatus" style="font-size: 12px; color: var(--accent); margin-bottom: 8px; text-align: center;">Статус: Свободны</div>
+                <button class="btn" id="dungeonBtn" onclick="startExpedition()">Начать экспедицию</button>
             </div>
         </div>
 
-        <!-- ВКЛАДКА 3: АРСЕНАЛ (УТИЛИТЫ) -->
-        <div id="tab-tools" class="tab-content">
+        <!-- ВКЛАДКА 4: КУЗНИЦА И КРАФТ -->
+        <div id="tab-forge" class="tab-content">
             <div class="card">
-                <h3>🔑 Генератор безопасных паролей</h3>
-                <input type="number" id="passLen" value="12" min="6" max="24">
-                <button class="btn" onclick="generatePass()">Создать пароль</button>
-                <div class="output" id="passOut">Нажмите кнопку</div>
-            </div>
-
-            <div class="card">
-                <h3>🎯 Спиннер решений</h3>
-                <input type="text" id="spinInput" value="Сделать задачу, Отдохнуть, Почитать книгу">
-                <button class="btn" onclick="spinDecision()">Выбрать случайное</button>
-                <div class="output" id="spinOut">Результат появится здесь</div>
+                <h3>⚒️ Кузница артефактов</h3>
+                <p style="font-size: 12px; color: var(--hint); margin-bottom: 10px;">Создавайте мощное снаряжение для усиления вашей гильдии.</p>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                    <span>Железо: <strong id="ironVal">0</strong></span>
+                    <span>Эссенция: <strong id="essenceVal">0</strong></span>
+                </div>
+                <button class="btn btn-secondary" onclick="craftItem()" style="margin-bottom: 6px;">Сковать Рунический Меч (5 Железа)</button>
             </div>
         </div>
     </div>
 
     <!-- Навигация -->
     <div class="nav-bar">
-        <button class="nav-item active" onclick="switchTab('focus', this)"><span>⚔️</span>Фокус</button>
-        <button class="nav-item" onclick="switchTab('habits', this)"><span>🔥</span>Привычки</button>
-        <button class="nav-item" onclick="switchTab('tools', this)"><span>🛠️</span>Утилиты</button>
+        <button class="nav-item active" onclick="switchTab('tavern', this)"><span>🍺</span>Таверна</button>
+        <button class="nav-item" onclick="switchTab('heroes', this)"><span>⚔️</span>Герои</button>
+        <button class="nav-item" onclick="switchTab('dungeon', this)"><span>🕳️</span>Поход</button>
+        <button class="nav-item" onclick="switchTab('forge', this)"><span>⚒️</span>Кузница</button>
     </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    const user = tg.initDataUnsafe?.user;
-    if (user) {
-        document.getElementById('heroName').innerText = user.first_name;
+    // Игровое состояние
+    let gold = parseInt(localStorage.getItem('gm_gold') || '200');
+    let gems = parseInt(localStorage.getItem('gm_gems') || '5');
+    let meat = parseInt(localStorage.getItem('gm_meat') || '10');
+    let iron = parseInt(localStorage.getItem('gm_iron') || '0');
+    let essence = parseInt(localStorage.getItem('gm_essence') || '0');
+
+    let tavernLvl = parseInt(localStorage.getItem('gm_t_lvl') || '1');
+    let tavernCost = parseInt(localStorage.getItem('gm_t_cost') || '100');
+    let heroes = JSON.parse(localStorage.getItem('gm_heroes') || '[]');
+    let onMission = false;
+
+    function logMsg(text) {
+        const box = document.getElementById('gameLog');
+        const time = new Date().toLocaleTimeString();
+        box.innerHTML = `[${time}] ${text}<br>` + box.innerHTML;
     }
 
-    // Данные игрока
-    let xp = parseInt(localStorage.getItem('game_xp') || '0');
-    let level = parseInt(localStorage.getItem('game_lvl') || '1');
-    let neededXp = level * 100;
+    function updateUI() {
+        document.getElementById('goldVal').innerText = gold;
+        document.getElementById('gemVal').innerText = gems;
+        document.getElementById('meatVal').innerText = meat;
+        document.getElementById('ironVal').innerText = iron;
+        document.getElementById('essenceVal').innerText = essence;
 
-    function addXp(amount) {
-        xp += amount;
-        if (xp >= neededXp) {
-            xp -= neededXp;
-            level++;
-            neededXp = level * 100;
-            alert(`🎉 Поздравляем! Ваш герой поднялся до ${level} уровня!`);
-        }
+        document.getElementById('tavernLvl').innerText = tavernLvl;
+        document.getElementById('tavernIncome').innerText = tavernLvl * 2;
+        document.getElementById('tavernCost').innerText = tavernCost;
+
+        renderHeroes();
         saveGame();
-        updateHeroUI();
     }
 
-    function updateHeroUI() {
-        document.getElementById('currentXp').innerText = xp;
-        document.getElementById('nextXp').innerText = neededXp;
-        document.getElementById('heroLevelText').innerText = `Уровень ${level} • Мастер фокуса`;
-        document.getElementById('xpBar').style.width = (xp / neededXp * 100) + '%';
-    }
-    updateHeroUI();
-
-    function saveGame() {
-        localStorage.setItem('game_xp', xp);
-        localStorage.setItem('game_lvl', level);
-    }
-
-    // Переключение вкладок
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -196,99 +195,131 @@
         btn.classList.add('active');
     }
 
-    // Таймер фокуса (Помодоро)
-    let timerInterval = null, timeLeft = 25 * 60;
-    function updateTimerDisplay() {
-        let m = String(Math.floor(timeLeft / 60)).padStart(2, '0');
-        let s = String(timeLeft % 60).padStart(2, '0');
-        document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+    function upgradeTavern() {
+        if (gold >= tavernCost) {
+            gold -= tavernCost;
+            tavernLvl++;
+            tavernCost = Math.floor(tavernCost * 1.6);
+            logMsg(`Таверна улучшена до уровня ${tavernLvl}!`);
+            updateUI();
+        } else {
+            alert('Недостаточно золота!');
+        }
     }
-    function startTimer() {
-        if(timerInterval) return;
-        timerInterval = setInterval(() => {
-            if(timeLeft > 0) {
-                timeLeft--;
-                updateTimerDisplay();
+
+    function hireHero() {
+        if (gold >= 300) {
+            gold -= 300;
+            const names = ['Арагорн', 'Лира', 'Торвальд', 'Венди', 'Гром', 'Эльза'];
+            const classes = ['Воин', 'Маг', 'Разбойник', 'Паладин'];
+            let name = names[Math.floor(Math.random() * names.length)];
+            let cls = classes[Math.floor(Math.random() * classes.length)];
+            
+            heroes.push({ name: `${name} (${cls})`, level: 1, power: 10 });
+            logMsg(`В гильдию вступил новый герой: ${name} (${cls})!`);
+            updateUI();
+        } else {
+            alert('Нужно 300 золота для найма!');
+        }
+    }
+
+    function renderHeroes() {
+        let html = '';
+        if (heroes.length === 0) {
+            html = '<div class="card" style="text-align:center; color:var(--hint); font-size:13px;">У вас пока нет героев. Нанимайте их во вкладке выше!</div>';
+        } else {
+            heroes.forEach((h, i) => {
+                html += `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
+                    <div>
+                        <div style="font-weight:bold; font-size:13px;">🛡️ ${h.name}</div>
+                        <div style="font-size:11px; color:var(--hint);">Уровень: ${h.level} | Сила: ${h.power}</div>
+                    </div>
+                    <button class="btn" style="width:auto; padding:6px 10px; font-size:11px;" onclick="upgradeHero(${i})">Качать (50🪙)</button>
+                </div>`;
+            });
+        }
+        document.getElementById('heroList').innerHTML = html;
+    }
+
+    function upgradeHero(i) {
+        if (gold >= 50) {
+            gold -= 50;
+            heroes[i].level++;
+            heroes[i].power += 5;
+            logMsg(`Герой ${heroes[i].name} повышен до уровня ${heroes[i].level}!`);
+            updateUI();
+        } else {
+            alert('Недостаточно золота!');
+        }
+    }
+
+    function startExpedition() {
+        if (heroes.length === 0) {
+            alert('Сначала наймите хотя бы одного героя!');
+            return;
+        }
+        if (onMission) return;
+
+        onMission = true;
+        const btn = document.getElementById('dungeonBtn');
+        const status = document.getElementById('expeditionStatus');
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        
+        let seconds = 10;
+        status.innerText = `Статус: Герои в подземелье (${seconds}с)...`;
+
+        let interval = setInterval(() => {
+            seconds--;
+            if (seconds > 0) {
+                status.innerText = `Статус: Герои в подземелье (${seconds}с)...`;
             } else {
-                stopTimer();
-                alert('Сессия фокуса завершена! Получено +50 XP.');
-                addXp(50);
-                timeLeft = 25 * 60;
-                updateTimerDisplay();
+                clearInterval(interval);
+                onMission = false;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                status.innerText = 'Статус: Свободны';
+
+                // Награды
+                let foundGold = 120 + Math.floor(Math.random() * 80);
+                let foundIron = 2 + Math.floor(Math.random() * 3);
+                gold += foundGold;
+                iron += foundIron;
+                logMsg(`Экспедиция успешна! Найдено: +${foundGold} золота, +${foundIron} железа.`);
+                updateUI();
             }
         }, 1000);
     }
-    function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
-    // Задачи (To-Do)
-    let tasks = JSON.parse(localStorage.getItem('game_tasks') || '[]');
-    renderTasks();
-    function addTask() {
-        let val = document.getElementById('taskInput').value.trim();
-        if(!val) return;
-        tasks.push({text: val, done: false});
-        document.getElementById('taskInput').value = '';
-        saveAndRenderTasks();
-    }
-    function toggleTask(i) {
-        tasks[i].done = !tasks[i].done;
-        if(tasks[i].done) addXp(20); // Награда за задачу
-        saveAndRenderTasks();
-    }
-    function deleteTask(i) { tasks.splice(i, 1); saveAndRenderTasks(); }
-    function saveAndRenderTasks() {
-        localStorage.setItem('game_tasks', JSON.stringify(tasks));
-        renderTasks();
-    }
-    function renderTasks() {
-        let html = '';
-        tasks.forEach((t, i) => {
-            html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:rgba(0,0,0,0.15); padding:8px 10px; border-radius:8px;">
-                <span onclick="toggleTask(${i})" style="cursor:pointer; text-decoration:${t.done ? 'line-through':'none'}; color:${t.done ? 'var(--hint)':'var(--text)'}; font-size:13px;">${t.text}</span>
-                <button onclick="deleteTask(${i})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px;">✕</button>
-            </div>`;
-        });
-        document.getElementById('taskList').innerHTML = html || '<p style="font-size:12px; color:var(--hint); text-align:center;">Нет активных квестов</p>';
+    function craftItem() {
+        if (iron >= 5) {
+            iron -= 5;
+            essence += 1;
+            logMsg('Вы успешно высковали Рунический Меч! Получена +1 эссенция.');
+            updateUI();
+        } else {
+            alert('Нужно как минимум 5 единиц железа из подземелий!');
+        }
     }
 
-    // Привычки
-    let habits = JSON.parse(localStorage.getItem('game_habits') || '["Выпить стакан воды", "Сделать зарядку"]');
-    renderHabits();
-    function addHabit() {
-        let name = prompt('Название привычки:');
-        if(name) { habits.push(name); saveAndRenderHabits(); }
-    }
-    function checkHabit(i) {
-        addXp(30);
-        alert('Привычка выполнена! +30 XP.');
-    }
-    function saveAndRenderHabits() {
-        localStorage.setItem('game_habits', JSON.stringify(habits));
-        renderHabits();
-    }
-    function renderHabits() {
-        let html = '';
-        habits.forEach((h, i) => {
-            html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:rgba(0,0,0,0.15); padding:10px; border-radius:10px;">
-                <span style="font-size:13px;">📌 ${h}</span>
-                <button class="btn" style="width:auto; padding:6px 12px; font-size:12px; background:var(--success);" onclick="checkHabit(${i})">Выполнить</button>
-            </div>`;
-        });
-        document.getElementById('habitList').innerHTML = html;
+    // Пассивный доход таверны каждую секунду
+    setInterval(() => {
+        gold += tavernLvl * 2;
+        updateUI();
+    }, 1000);
+
+    function saveGame() {
+        localStorage.setItem('gm_gold', gold);
+        localStorage.setItem('gm_gems', gems);
+        localStorage.setItem('gm_meat', meat);
+        localStorage.setItem('gm_iron', iron);
+        localStorage.setItem('gm_essence', essence);
+        localStorage.setItem('gm_t_lvl', tavernLvl);
+        localStorage.setItem('gm_t_cost', tavernCost);
+        localStorage.setItem('gm_heroes', JSON.stringify(heroes));
     }
 
-    // Утилиты
-    function generatePass() {
-        let len = parseInt(document.getElementById('passLen').value) || 12;
-        let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-        let res = Array.from({length: len}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-        document.getElementById('passOut').innerText = res;
-    }
-    function spinDecision() {
-        let arr = document.getElementById('spinInput').value.split(',').map(s => s.trim()).filter(Boolean);
-        let pick = arr[Math.floor(Math.random() * arr.length)] || 'Нечего выбирать';
-        document.getElementById('spinOut').innerText = "Судьба выбрала: " + pick;
-    }
+    updateUI();
 </script>
 </body>
 </html>
